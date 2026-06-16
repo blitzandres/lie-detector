@@ -117,6 +117,11 @@ That order moves from orientation -> implementation reality -> architecture -> a
 
 ### Phase 1 — Build the Engine Core
 
+> ⚠️ **Gate: complete `planning/READINESS.md` first.** Before any cue code: (1) dependency manifest,
+> (2) `ModalityPlugin` abstract interface, (3) resolve the 2 RESEARCH blockers. Then the real entry point
+> is the **eval harness + one cue end-to-end (walking skeleton) + math tests** — NOT building all modules
+> breadth-first. See READINESS.md for the full 8-item list and order of attack.
+
 1. **Linguistic module**
    Target: `modalities/linguistic/`
    Why first: fastest path to a testable signal pipeline with no video dependencies
@@ -180,8 +185,10 @@ That order moves from orientation -> implementation reality -> architecture -> a
 | Topic | Current answer |
 |---|---|
 | Canonical planning home | `blitz-engine/planning/` |
-| Deployment target | Localhost first, free remote only if needed |
-| CrisperWhisper | Allowed for non-commercial research; replace if project scope changes |
+| Deployment target | 3 tiers — browser-hybrid (lean default), local Python (M1 dev), cloud 24GB (full runs). See `EXECUTION_ARCHITECTURE.md` |
+| Memory budget | M1/8GB unified; **sequential execution, one heavyweight model at a time** (concurrent = OOM/thrash). See `EXECUTION_ARCHITECTURE.md` Part A |
+| Browser-hybrid | Visual/rPPG/UI client-side (MediaPipe/WebGL); linguistic+contradiction via Claude API; heavy cues on cloud. Privacy: raw video stays on device. See Part B |
+| CrisperWhisper | **Resolve to WhisperX** — RAM (6–7GB) + licensing both rule it out for 8GB; whisper-tiny/base in browser |
 | AU28 | Custom landmark fallback required |
 | Baseline duration | 90-180 seconds |
 | Verdict policy | Probability + uncertainty + abstain, never binary certainty |

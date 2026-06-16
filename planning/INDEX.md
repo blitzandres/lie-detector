@@ -3,6 +3,27 @@
 
 ---
 
+## 🚦 START HERE — current focus (updated June 16, 2026)
+
+**What we are building right now:** the **Live Consensus Overlay** ("AI-vision") — a real-time,
+sports-analysis-style overlay where MediaPipe maps the face/body, the Python engine detects deception
+**cues** and aggregates them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the
+browser draws a telestrator + consensus panel on top of the video. This is the project's **walking
+skeleton** (engine + UI proven together). Raw video never leaves the device.
+
+**AI agents — read in this order before building:**
+1. `docs/superpowers/specs/2026-06-16-live-consensus-overlay-design.md` — the approved design spec (WHAT to build).
+2. `planning/READINESS.md` — the 21 definition-of-ready items (gate before/at build start; the overlay IS item #5).
+3. `planning/EXECUTION_ARCHITECTURE.md` — M1/8 GB memory budget (**sequential execution**) + browser-hybrid.
+4. `docs/CUE_CATALOG.md` + `modalities/linguistic/RESEARCH.md` — the cues and their evidence.
+5. The implementation plan (created by the writing-plans step; link added when written) — the step-by-step build.
+
+**Key locked decisions:** Approach 2 (browser capture + Python engine, WebSocket, feature vectors only) ·
+science-driven cue weights (not learned) · honest framing (statuses, never binary "LIE") · WhisperX not
+CrisperWhisper · capture is a swappable source adapter (webcam → screen-region → native draw-anywhere).
+
+---
+
 ## 📋 Document Overview
 
 This folder contains the complete planning phase for the **Blitz Engine** — a modular, open-source behavioral deception detection system.
@@ -19,7 +40,11 @@ Treat this folder as the authoritative planning copy. External mirrors should be
 | **ACCURACY_PLAN.md** | Accuracy expectations, quality gates, baseline normalization, scoring formula, Claude prompt strategy | 14KB | ✅ Final |
 | **RESEARCH.md** | Implementation research: 6 gaps resolved, 2 blockers identified, library install methods | 14KB | ✅ Final |
 | **COMPETITIVE_RESEARCH.md** | GitHub landscape survey (Apr 2026): 10 top repos, novel techniques, free datasets, accuracy benchmarks | ~20KB | ✅ Final |
+| **READINESS.md** | Definition of Ready — 21 loose ends before/at start of dev: 9 core (manifest, plugin interface, eval harness, walking skeleton, tests, science-driven weights) + 12 cheap high-value (diarization, cue-independence fusion fix, graceful degradation, calibration, PII/data handling, secrets, reproducibility, language gate, CI) | 14KB | ⬜ Action list |
 | **signal_preview.py** | VHS signal monitor preview (terminal animation demo) | 4.1KB | ✅ Runnable |
+| **EXECUTION_ARCHITECTURE.md** | Memory budget (M1/8GB, sequential-execution rule) + browser-hybrid deployment (MediaPipe/WebGL client, Claude API, cloud) + per-modality placement + privacy win | 11KB | ✅ Reference |
+| **../docs/superpowers/specs/2026-06-16-live-consensus-overlay-design.md** | ⭐ CURRENT BUILD — approved design for the Live Consensus Overlay: architecture, cue→landmark mapping, consensus mechanism, capture source roadmap, first-build scope | 9KB | ✅ Approved design |
+| **../modalities/linguistic/RESEARCH.md** | Deep research on the linguistic/NLP layer — RM/CBCA/VA frameworks, cue-by-cue evidence, the no-baseline (podcast) case, transformer caveats | 13KB | ✅ Reference |
 
 **Total:** ~120 KB of documentation, research, and code scaffolding
 

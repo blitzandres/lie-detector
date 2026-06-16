@@ -11,17 +11,28 @@ Localhost remains the active deployment target for research use. Any Railway not
 
 ---
 
-## BLOCKER 1: CrisperWhisper License is Non-Commercial
+## BLOCKER 1: CrisperWhisper — RESOLVED → WhisperX (June 15, 2026)
 
-**CrisperWhisper is CC-BY-NC-4.0 — non-commercial use only.**
+**CrisperWhisper is CC-BY-NC-4.0 (non-commercial only) AND ~6–7 GB RAM (1.55B params).**
 
-This would conflict with a future commercial SaaS business model. Options:
-- **Option A (easy):** Use WhisperX (BSD-2) instead — word timestamps + pause gaps, no filler detection
-- **Option B (preferred if commercial):** Contact Nyra Health for a commercial license
-- **Option C (acceptable for Phase 1 personal use):** Use CrisperWhisper now, replace before monetizing
-- **Option D:** Implement filler detection manually on top of WhisperX (detect short hesitation pauses + common filler words via text matching)
+Two independent reasons rule it out for the default path: licensing *and* memory — on the 8 GB M1 it does
+not fit the working budget (see `EXECUTION_ARCHITECTURE.md` Part A). The RAM constraint, not just licensing,
+is decisive.
 
-**Recommendation:** Use CrisperWhisper for Phase 1 (personal research), plan to swap before any commercial launch.
+Options considered:
+- **Option A (chosen):** Use **WhisperX / faster-whisper (int8)** (BSD-2, ~2.5–3 GB) — word timestamps +
+  pause gaps. In the browser path use **whisper-tiny/base** (transformers.js / whisper.cpp-WASM).
+- Option D (fold in): get filler detection on top of WhisperX via short-hesitation pause + filler-word
+  text matching (recovers most of what CrisperWhisper's `[UH]/[UM]` gave us).
+- Options B/C (contact Nyra for a commercial license / use CrisperWhisper temporarily) — **rejected**: even
+  setting licensing aside, it does not fit 8 GB.
+
+**DECISION:** WhisperX is the transcriber for local + cloud; whisper-tiny/base for browser. Filler detection
+reimplemented on WhisperX (Option D). CrisperWhisper may only be used on the 24 GB cloud box if a specific
+cue ever requires its verbatim fillers and accuracy justifies it.
+
+> Note (pre-existing doc error to fix): `LIE_DETECTOR_BLUEPRINT.md` and `docs/CUE_CATALOG.md` library tables
+> list CrisperWhisper as "Apache 2.0" — that is wrong; it is **CC-BY-NC-4.0**. Correct on next pass.
 
 ---
 
