@@ -7,8 +7,9 @@ permitted until the fill window (default 90s, spec §8) has elapsed (status CALI
 """
 from __future__ import annotations
 
-import statistics as _stats
 from collections import defaultdict, deque
+
+from core.calibration.baseline import compute_robust_z
 
 DEFAULT_BASELINE_SECONDS = 90
 DEFAULT_WINDOW_SECONDS = 180
@@ -68,8 +69,4 @@ class RollingBaseline:
         dq = self._values.get(cue_id)
         if not dq or len(dq) < 5:
             return 0.0
-        vals = [v for _, v in dq]
-        med = _stats.median(vals)
-        mad = _stats.median([abs(v - med) for v in vals])
-        spread = (1.4826 * mad) if mad > 0 else 1.0
-        return (raw_value - med) / spread
+        return compute_robust_z(raw_value, [v for _, v in dq], flat_fallback=True)
