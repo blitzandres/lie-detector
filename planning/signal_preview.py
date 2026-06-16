@@ -1,7 +1,6 @@
-import time
 import random
-import os
 import sys
+import time
 
 # ANSI colors
 GREEN  = "\033[92m"

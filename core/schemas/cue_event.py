@@ -4,7 +4,6 @@ The canonical internal object. All modality plugins produce CueEvents.
 """
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class Modality(str, Enum):
@@ -37,7 +36,8 @@ class CueEvent:
     llr: float                           # log-likelihood ratio contribution
     quality: float                       # extraction confidence [0.0, 1.0]
     question_id: str                     # which question this fired on
-    on_word: Optional[str] = None        # specific word that triggered cue
+    region: str = ""                     # telestrator anchor region (spec §5)
+    on_word: str | None = None           # specific word that triggered cue
     effect_size_d: float = 0.25          # literature effect size for this cue
     reliability_tier: int = 3            # 1=strong, 2=moderate, 3=weak, 4=anchor
 

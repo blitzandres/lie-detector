@@ -16,7 +16,7 @@ skeleton** (engine + UI proven together). Raw video never leaves the device.
 2. `planning/READINESS.md` — the 21 definition-of-ready items (gate before/at build start; the overlay IS item #5).
 3. `planning/EXECUTION_ARCHITECTURE.md` — M1/8 GB memory budget (**sequential execution**) + browser-hybrid.
 4. `docs/CUE_CATALOG.md` + `modalities/linguistic/RESEARCH.md` — the cues and their evidence.
-5. The implementation plan (created by the writing-plans step; link added when written) — the step-by-step build.
+5. `docs/superpowers/plans/2026-06-16-live-consensus-overlay.md` + `docs/OVERLAY_README.md` — the implementation plan + one-command quickstart (Stage 1 built).
 
 **Key locked decisions:** Approach 2 (browser capture + Python engine, WebSocket, feature vectors only) ·
 science-driven cue weights (not learned) · honest framing (statuses, never binary "LIE") · WhisperX not

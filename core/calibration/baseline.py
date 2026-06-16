@@ -3,20 +3,26 @@
 from __future__ import annotations
 
 import statistics
-from typing import Dict, List
-
 
 MINIMUM_BASELINE_SECONDS = 90    # Research-updated minimum (was 30-60s)
 IDEAL_BASELINE_SECONDS = 180
 
 
-def compute_robust_z(value: float, baseline_values: List[float]) -> float:
+def compute_robust_z(
+    value: float, baseline_values: list[float], flat_fallback: bool = False
+) -> float:
     """
     Robust Z-score using Median Absolute Deviation.
     Resistant to outliers unlike standard Z.
 
     z_robust = (x - median) / (1.4826 × MAD)
     The 1.4826 factor makes MAD consistent with std under normality.
+
+    When the baseline has zero variance (MAD == 0):
+    - flat_fallback=False (default): return 0.0 — refuse to normalize without a scale.
+    - flat_fallback=True: use unit spread so a genuine deviation from a perfectly flat
+      baseline still registers (used by the rolling live baseline, where many cues sit at
+      a constant 0 during calm calibration). Matches PersonalBaseline.normalize behaviour.
     """
     if len(baseline_values) < 5:
         raise ValueError(f"Need at least 5 baseline observations, got {len(baseline_values)}")
@@ -25,7 +31,9 @@ def compute_robust_z(value: float, baseline_values: List[float]) -> float:
     mad = statistics.median([abs(v - med) for v in baseline_values])
 
     if mad == 0:
-        return 0.0  # No variation in baseline
+        if not flat_fallback:
+            return 0.0  # No variation in baseline
+        return value - med  # unit spread
 
     return (value - med) / (1.4826 * mad)
 
@@ -52,18 +60,18 @@ class PersonalBaseline:
     ]
 
     def __init__(self):
-        self.trait_stats: Dict[str, dict] = {}
-        self.stress_stats: Dict[str, dict] = {}
+        self.trait_stats: dict[str, dict] = {}
+        self.stress_stats: dict[str, dict] = {}
         self.baseline_duration_s: float = 0.0
         self.is_sufficient: bool = False
         self.observation_count: int = 0
 
-    def record_baseline(self, cue_observations: Dict[str, List[float]], duration_s: float):
+    def record_baseline(self, cue_observations: dict[str, list[float]], duration_s: float):
         """Record baseline observations for all cues."""
         if not cue_observations:
             raise ValueError("cue_observations cannot be empty")
 
-        trait_stats: Dict[str, dict] = {}
+        trait_stats: dict[str, dict] = {}
         max_samples = 0
         for cue_id, values in cue_observations.items():
             if len(values) < 3:

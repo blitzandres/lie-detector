@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
-from typing import List, Optional
 
 from blitz_engine.engine import BlitzEngine
 from blitz_engine.reporting import dumps_report
@@ -35,12 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def read_lines(path: str) -> List[str]:
+def read_lines(path: str) -> list[str]:
     lines = [line.strip() for line in Path(path).read_text().splitlines()]
     return [line for line in lines if line]
 
 
-def read_optional_int_lines(path: str) -> Optional[List[int]]:
+def read_optional_int_lines(path: str) -> list[int] | None:
     if not path:
         return None
     return [int(line) for line in read_lines(path)]
@@ -75,7 +73,7 @@ def run_analyze_text(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 

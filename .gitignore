@@ -8,3 +8,7 @@ __pycache__/
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Local config & prediction logs (never commit biometric-derived data)
+.env
+logs/
