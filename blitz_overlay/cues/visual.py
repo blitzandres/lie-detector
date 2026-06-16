@@ -48,7 +48,6 @@ class GazeAversion(CueDetector):
     def __init__(self) -> None:
         super().__init__()
         self._averted_since: int | None = None
-        self._last_ts: int = 0
 
     def measure(self, frame: FeatureFrame) -> float | None:
         g = frame.geometry
@@ -64,7 +63,6 @@ class GazeAversion(CueDetector):
         else:
             self._averted_since = None
             duration_s = 0.0
-        self._last_ts = now
         return duration_s
 
 
