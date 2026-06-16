@@ -51,9 +51,11 @@ class CueDetector(ABC):
         """
         return max(0.0, min(1.0, frame.confidence))
 
-    def update(self, frame: FeatureFrame, baseline: RollingBaseline) -> CueEvent | None:
+    def update(self, frame: FeatureFrame, baseline: RollingBaseline,
+               value: float | None = None) -> CueEvent | None:
         """Read frame, normalize against baseline (read-only), emit CueEvent or None."""
-        value = self.measure(frame)
+        if value is None:
+            value = self.measure(frame)
         if value is None:
             return None
         z = baseline.normalize(self.cue_id, value)
