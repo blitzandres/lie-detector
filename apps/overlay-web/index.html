@@ -1,1 +1,29 @@
-<!doctype html><title>Live Consensus Overlay</title>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Consensus Overlay</title>
+  <link rel="stylesheet" href="/static/css/overlay.css" />
+</head>
+<body>
+  <header>Blitz Engine · Live Consensus Overlay · webcam · local-only</header>
+  <div class="stage">
+    <video id="cam" playsinline muted></video>
+    <canvas id="overlay"></canvas>
+  </div>
+  <section class="panel">
+    <div class="panel-head">
+      <span id="status">CONNECTING</span>
+      <button id="toggle">details</button>
+    </div>
+    <div class="risk-meter"><div id="risk-fill"></div></div>
+    <div id="agree">— of 2 families agree</div>
+    <div id="message"></div>
+    <div id="panel-body">
+      <ul id="voters"></ul>
+    </div>
+  </section>
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>
