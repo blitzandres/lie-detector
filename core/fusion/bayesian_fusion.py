@@ -120,3 +120,76 @@ def convergence_gate_passed(cues: list[CueEvent], threshold: float = 0.65,
 
     active_modalities = {cue.modality for cue in cues if cue.z_score > 1.0}
     return len(active_modalities) >= 2
+
+
+# --- Family-grouped fusion + two-gate (READINESS #6, #11) -------------------
+
+from core.schemas.cue_event import Modality  # noqa: E402
+
+# Map each modality to a consensus family. Visual+Physio are wired in Stage 1.
+_FAMILY_OF = {
+    Modality.VISUAL: "visual",
+    Modality.PHYSIOLOGICAL: "physio",
+    Modality.AUDIO: "audio",
+    Modality.LINGUISTIC: "linguistic",
+    Modality.CBCA: "linguistic",
+}
+
+# Within a family, the k-th strongest cue is down-weighted by DECORRELATION**k.
+# This stops correlated cues in one family from faking independent agreement.
+DECORRELATION = 0.5
+
+# A family "votes flag" when its own log-odds contribution implies P >= this.
+FAMILY_THRESHOLD = 0.60
+
+
+def family_of(modality: Modality) -> str:
+    return _FAMILY_OF[modality]
+
+
+def fuse_by_family(cues: list[CueEvent], prior: float = DEFAULT_PRIOR) -> dict:
+    """Group cues into families; decorrelate within family; sum family contributions.
+
+    Returns combined posterior + per-family log-odds contributions + per-family vote.
+    """
+    grouped: dict[str, list[CueEvent]] = {}
+    for cue in cues:
+        cue.llr = compute_llr(cue)
+        grouped.setdefault(family_of(cue.modality), []).append(cue)
+
+    family_contrib: dict[str, float] = {}
+    family_votes: dict[str, bool] = {}
+    base_log_odds = logit(prior)
+    combined_log_odds = base_log_odds
+
+    for family, members in grouped.items():
+        ranked = sorted(members, key=lambda c: abs(c.llr * cue_weight(c)), reverse=True)
+        contribution = 0.0
+        for rank, cue in enumerate(ranked):
+            contribution += cue.llr * cue_weight(cue) * (DECORRELATION ** rank)
+        family_contrib[family] = contribution
+        combined_log_odds += contribution
+        family_votes[family] = sigmoid(base_log_odds + contribution) >= FAMILY_THRESHOLD
+
+    return {
+        "posterior": sigmoid(combined_log_odds),
+        "posterior_log_odds": combined_log_odds,
+        "families": family_contrib,
+        "family_votes": family_votes,
+    }
+
+
+def two_gate(fused: dict, threshold: float = 0.65) -> dict:
+    """Two-gate convergence: >=2 independent families vote flag AND combined risk >= threshold."""
+    agreeing = [fam for fam, vote in fused.get("family_votes", {}).items() if vote]
+    n_agree = len(agreeing)
+    gate1 = fused["posterior"] >= threshold
+    gate2 = n_agree >= 2
+    return {
+        "flag": bool(gate1 and gate2),
+        "n_agree": n_agree,
+        "n_required": 2,
+        "agreeing_families": agreeing,
+        "gate1_risk": gate1,
+        "gate2_convergence": gate2,
+    }
