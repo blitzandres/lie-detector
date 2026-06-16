@@ -70,6 +70,7 @@ class CueDetector(ABC):
             llr=0.0,
             quality=self.quality(frame),
             question_id="live",
+            region=self.region,
             effect_size_d=self.effect_size_d,
             reliability_tier=self.reliability_tier,
         )

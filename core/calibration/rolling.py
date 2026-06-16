@@ -7,9 +7,8 @@ permitted until the fill window (default 90s, spec §8) has elapsed (status CALI
 """
 from __future__ import annotations
 
+import statistics as _stats
 from collections import defaultdict, deque
-
-from core.calibration.baseline import compute_robust_z
 
 DEFAULT_BASELINE_SECONDS = 90
 DEFAULT_WINDOW_SECONDS = 180
@@ -58,10 +57,19 @@ class RollingBaseline:
         return len(self._values.get(cue_id, ()))
 
     def normalize(self, cue_id: str, raw_value: float) -> float:
-        """Robust-Z vs the rolling window. Returns 0.0 while calibrating or if underpowered."""
+        """Robust-Z vs the rolling window. Returns 0.0 while calibrating or if underpowered.
+
+        When the baseline has zero variance (MAD == 0), falls back to unit-spread so that
+        genuine deviations from a flat baseline still produce a non-zero z-score, consistent
+        with PersonalBaseline.normalize behaviour.
+        """
         if self.is_calibrating:
             return 0.0
         dq = self._values.get(cue_id)
         if not dq or len(dq) < 5:
             return 0.0
-        return compute_robust_z(raw_value, [v for _, v in dq])
+        vals = [v for _, v in dq]
+        med = _stats.median(vals)
+        mad = _stats.median([abs(v - med) for v in vals])
+        spread = (1.4826 * mad) if mad > 0 else 1.0
+        return (raw_value - med) / spread
