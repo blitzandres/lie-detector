@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Dict, List, Optional
 
 from core.calibration.baseline import PersonalBaseline
 from core.fusion.bayesian_fusion import DEFAULT_PRIOR, convergence_gate_passed, fuse
 from core.schemas.cue_event import BlitzOutput
 from modalities.audio import AudioAnalyzer
 from modalities.linguistic import LinguisticAnalyzer
-
 
 ALLOWED_MODALITIES = {"linguistic", "audio"}
 
@@ -21,7 +19,7 @@ class BlitzEngine:
 
     def __init__(
         self,
-        modalities: Optional[List[str]] = None,
+        modalities: list[str] | None = None,
         prior: float = DEFAULT_PRIOR,
         convergence_threshold: float = 0.65,
     ):
@@ -41,14 +39,14 @@ class BlitzEngine:
     def new_session(
         self,
         *,
-        baseline_texts: Optional[List[str]] = None,
-        baseline_audio_files: Optional[List[str]] = None,
+        baseline_texts: list[str] | None = None,
+        baseline_audio_files: list[str] | None = None,
         consent: bool,
         use_case: str,
         jurisdiction: str,
-        baseline_duration_s: Optional[float] = None,
-        baseline_latencies_ms: Optional[List[int]] = None,
-    ) -> "BlitzSession":
+        baseline_duration_s: float | None = None,
+        baseline_latencies_ms: list[int] | None = None,
+    ) -> BlitzSession:
         if not consent:
             raise ValueError("Consent must be declared to create a session.")
 
@@ -56,7 +54,7 @@ class BlitzEngine:
             raise ValueError("Provide baseline_texts or baseline_audio_files")
 
         baseline = PersonalBaseline()
-        observations: Dict[str, List[float]] = {}
+        observations: dict[str, list[float]] = {}
         if self.linguistic:
             if not baseline_texts:
                 raise ValueError("baseline_texts is required when linguistic modality is enabled")
@@ -108,9 +106,9 @@ class BlitzSession:
     def analyze_text(
         self,
         response_text: str,
-        question: Optional[str] = None,
-        question_id: Optional[str] = None,
-        response_latency_ms: Optional[int] = None,
+        question: str | None = None,
+        question_id: str | None = None,
+        response_latency_ms: int | None = None,
     ) -> BlitzOutput:
         return self.analyze(
             response_text=response_text,
@@ -122,8 +120,8 @@ class BlitzSession:
     def analyze_audio(
         self,
         audio_path: str,
-        question: Optional[str] = None,
-        question_id: Optional[str] = None,
+        question: str | None = None,
+        question_id: str | None = None,
     ) -> BlitzOutput:
         return self.analyze(
             audio_path=audio_path,
@@ -133,11 +131,11 @@ class BlitzSession:
 
     def analyze(
         self,
-        response_text: Optional[str] = None,
-        audio_path: Optional[str] = None,
-        question: Optional[str] = None,
-        question_id: Optional[str] = None,
-        response_latency_ms: Optional[int] = None,
+        response_text: str | None = None,
+        audio_path: str | None = None,
+        question: str | None = None,
+        question_id: str | None = None,
+        response_latency_ms: int | None = None,
     ) -> BlitzOutput:
         if not response_text and not audio_path:
             raise ValueError("Provide response_text or audio_path")
@@ -212,11 +210,11 @@ class BlitzSession:
 
     def _build_narrative(
         self,
-        question: Optional[str],
+        question: str | None,
         response_text: str,
         posterior: float,
         gate_passed: bool,
-        top_cues: List,
+        top_cues: list,
     ) -> str:
         cue_names = ", ".join(cue.cue_id.rsplit(".", 1)[-1] for cue in top_cues[:3]) or "no strong cues"
         status = "elevated" if gate_passed else "below convergence threshold"

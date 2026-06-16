@@ -1,9 +1,8 @@
 """Bayesian log-odds fusion for normalized cue streams."""
 
 import math
-from typing import Dict, List
 
-from core.schemas.cue_event import CueEvent, BlitzOutput
+from core.schemas.cue_event import CueEvent
 
 # Default prior: 30% base rate of deceptive responses (conservative)
 DEFAULT_PRIOR = 0.30
@@ -67,7 +66,7 @@ def group_penalty(cue: CueEvent) -> float:
     return 1.0
 
 
-def estimate_uncertainty(cues: List[CueEvent]) -> float:
+def estimate_uncertainty(cues: list[CueEvent]) -> float:
     """Return a simple 90% CI half-width proxy from cue count and quality."""
     if not cues:
         return 0.45
@@ -77,11 +76,11 @@ def estimate_uncertainty(cues: List[CueEvent]) -> float:
     return min(0.45, max(0.08, 0.32 / math.sqrt(active)))
 
 
-def fuse(cues: List[CueEvent], prior: float = DEFAULT_PRIOR) -> dict:
+def fuse(cues: list[CueEvent], prior: float = DEFAULT_PRIOR) -> dict:
     """Fuse cues into a posterior probability and explanation payload."""
     posterior_log_odds = logit(prior)
-    channel_contributions: Dict[str, float] = {}
-    scored_cues: List[CueEvent] = []
+    channel_contributions: dict[str, float] = {}
+    scored_cues: list[CueEvent] = []
 
     for cue in cues:
         cue.llr = compute_llr(cue)
@@ -108,7 +107,7 @@ def fuse(cues: List[CueEvent], prior: float = DEFAULT_PRIOR) -> dict:
     }
 
 
-def convergence_gate_passed(cues: List[CueEvent], threshold: float = 0.65,
+def convergence_gate_passed(cues: list[CueEvent], threshold: float = 0.65,
                              posterior: float = 0.0) -> bool:
     """
     Two-gate convergence check:

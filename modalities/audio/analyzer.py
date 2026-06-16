@@ -6,8 +6,8 @@ import array
 import math
 import statistics
 import wave
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
 
 from core.schemas.cue_event import CueEvent, Modality, Phase
 
@@ -23,7 +23,7 @@ class AudioAnalyzer:
         "audio.soft_segment_ratio": {"effect_size_d": 0.21, "reliability_tier": 2},
     }
 
-    def load_wav(self, wav_path: str) -> Tuple[List[float], int]:
+    def load_wav(self, wav_path: str) -> tuple[list[float], int]:
         path = Path(wav_path)
         if path.suffix.lower() != ".wav":
             raise ValueError(f"AudioAnalyzer expects a .wav file, got {path.name}")
@@ -45,7 +45,7 @@ class AudioAnalyzer:
         normalized = [sample / 32768.0 for sample in samples]
         return normalized, sample_rate
 
-    def _windowed(self, samples: Sequence[float], window_size: int) -> List[List[float]]:
+    def _windowed(self, samples: Sequence[float], window_size: int) -> list[list[float]]:
         return [list(samples[i : i + window_size]) for i in range(0, len(samples), window_size) if samples[i : i + window_size]]
 
     def _rms(self, samples: Sequence[float]) -> float:
@@ -57,12 +57,12 @@ class AudioAnalyzer:
         if len(samples) < 2:
             return 0.0
         crossings = 0
-        for left, right in zip(samples, samples[1:]):
+        for left, right in zip(samples, samples[1:], strict=False):
             if (left >= 0 > right) or (left < 0 <= right):
                 crossings += 1
         return crossings / (len(samples) - 1)
 
-    def extract_features(self, wav_path: str) -> Dict[str, float]:
+    def extract_features(self, wav_path: str) -> dict[str, float]:
         samples, sample_rate = self.load_wav(wav_path)
         if not samples:
             raise ValueError("WAV file contains no samples")
@@ -72,7 +72,6 @@ class AudioAnalyzer:
         window_rms = [self._rms(window) for window in windows]
         overall_rms = self._rms(samples)
         peak = max(abs(sample) for sample in samples)
-        mean_abs = statistics.fmean(abs(sample) for sample in samples)
         silence_threshold = max(0.01, overall_rms * 0.35)
         silent_windows = [window for window in window_rms if window < silence_threshold]
         soft_windows = [window for window in window_rms if silence_threshold <= window < silence_threshold * 1.8]
@@ -85,7 +84,7 @@ class AudioAnalyzer:
             "audio.soft_segment_ratio": len(soft_windows) / max(1, len(window_rms)),
         }
 
-    def build_baseline_observations(self, wav_paths: List[str]) -> Dict[str, List[float]]:
+    def build_baseline_observations(self, wav_paths: list[str]) -> dict[str, list[float]]:
         observations = {cue_id: [] for cue_id in self.cue_specs}
         for wav_path in wav_paths:
             for cue_id, value in self.extract_features(wav_path).items():
@@ -98,9 +97,9 @@ class AudioAnalyzer:
         question_id: str,
         baseline,
         timestamp_ms: int = 0,
-    ) -> List[CueEvent]:
+    ) -> list[CueEvent]:
         features = self.extract_features(wav_path)
-        cues: List[CueEvent] = []
+        cues: list[CueEvent] = []
         for cue_id, raw_value in features.items():
             spec = self.cue_specs[cue_id]
             z_score = baseline.normalize(cue_id, raw_value)

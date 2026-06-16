@@ -1,6 +1,7 @@
 """Tooling guards: deps declared, tools importable, env handling present."""
-import tomllib
 from pathlib import Path
+
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -18,8 +19,11 @@ def test_pyproject_declares_overlay_packages_and_deps():
 
 
 def test_ruff_and_pytest_importable():
+    import subprocess
+    import sys
+
     import pytest  # noqa: F401
-    import subprocess, sys
+
     assert subprocess.run([sys.executable, "-m", "ruff", "--version"]).returncode == 0
 
 

@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from typing import Dict, List, Optional
 
 from core.schemas.cue_event import CueEvent, Modality, Phase
-
 
 TOKEN_RE = re.compile(r"[A-Za-z']+")
 
@@ -35,10 +33,10 @@ class LinguisticAnalyzer:
         "linguistic.response_delay_ms": {"effect_size_d": 0.26, "reliability_tier": 2},
     }
 
-    def tokenize(self, text: str) -> List[str]:
+    def tokenize(self, text: str) -> list[str]:
         return TOKEN_RE.findall(text.lower())
 
-    def extract_features(self, text: str, response_latency_ms: Optional[int] = None) -> Dict[str, float]:
+    def extract_features(self, text: str, response_latency_ms: int | None = None) -> dict[str, float]:
         tokens = self.tokenize(text)
         counts = Counter(tokens)
         token_count = max(1, len(tokens))
@@ -64,13 +62,13 @@ class LinguisticAnalyzer:
 
     def build_baseline_observations(
         self,
-        baseline_texts: List[str],
-        baseline_latencies_ms: Optional[List[int]] = None,
-    ) -> Dict[str, List[float]]:
+        baseline_texts: list[str],
+        baseline_latencies_ms: list[int] | None = None,
+    ) -> dict[str, list[float]]:
         observations = {cue_id: [] for cue_id in self.cue_specs}
         latencies = baseline_latencies_ms or [0] * len(baseline_texts)
 
-        for text, latency in zip(baseline_texts, latencies):
+        for text, latency in zip(baseline_texts, latencies, strict=False):
             for cue_id, value in self.extract_features(text, response_latency_ms=latency).items():
                 observations[cue_id].append(value)
 
@@ -81,11 +79,11 @@ class LinguisticAnalyzer:
         text: str,
         question_id: str,
         baseline,
-        response_latency_ms: Optional[int] = None,
+        response_latency_ms: int | None = None,
         timestamp_ms: int = 0,
-    ) -> List[CueEvent]:
+    ) -> list[CueEvent]:
         features = self.extract_features(text, response_latency_ms=response_latency_ms)
-        cues: List[CueEvent] = []
+        cues: list[CueEvent] = []
 
         for cue_id, raw_value in features.items():
             spec = self.cue_specs[cue_id]

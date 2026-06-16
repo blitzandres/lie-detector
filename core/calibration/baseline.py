@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import statistics
-from typing import Dict, List
-
 
 MINIMUM_BASELINE_SECONDS = 90    # Research-updated minimum (was 30-60s)
 IDEAL_BASELINE_SECONDS = 180
 
 
-def compute_robust_z(value: float, baseline_values: List[float]) -> float:
+def compute_robust_z(value: float, baseline_values: list[float]) -> float:
     """
     Robust Z-score using Median Absolute Deviation.
     Resistant to outliers unlike standard Z.
@@ -52,18 +50,18 @@ class PersonalBaseline:
     ]
 
     def __init__(self):
-        self.trait_stats: Dict[str, dict] = {}
-        self.stress_stats: Dict[str, dict] = {}
+        self.trait_stats: dict[str, dict] = {}
+        self.stress_stats: dict[str, dict] = {}
         self.baseline_duration_s: float = 0.0
         self.is_sufficient: bool = False
         self.observation_count: int = 0
 
-    def record_baseline(self, cue_observations: Dict[str, List[float]], duration_s: float):
+    def record_baseline(self, cue_observations: dict[str, list[float]], duration_s: float):
         """Record baseline observations for all cues."""
         if not cue_observations:
             raise ValueError("cue_observations cannot be empty")
 
-        trait_stats: Dict[str, dict] = {}
+        trait_stats: dict[str, dict] = {}
         max_samples = 0
         for cue_id, values in cue_observations.items():
             if len(values) < 3:
