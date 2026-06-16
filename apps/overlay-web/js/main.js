@@ -3,6 +3,7 @@ import { MediaPipeExtractor } from "./mediapipe-extractor.js";
 import { RppgSampler } from "./rppg-sampler.js";
 import { WsClient } from "./ws-client.js";
 import { OverlayRenderer } from "./overlay-renderer.js";
+import { Enneagram } from "./enneagram.js";
 
 const video = document.getElementById("cam");
 const canvas = document.getElementById("overlay");
@@ -19,13 +20,15 @@ const panel = {
 const extractor = new MediaPipeExtractor();
 const sampler = new RppgSampler();
 const renderer = new OverlayRenderer(canvas, panel);
+const enneagram = new Enneagram(document.getElementById("enneagram"));
 const wsUrl = `ws://${location.host}/ws`;
-const ws = new WsClient(wsUrl, (c) => renderer.setConsensus(c),
+const ws = new WsClient(wsUrl, (c) => { renderer.setConsensus(c); enneagram.setConsensus(c); },
   (s) => { if (s === "engine-offline") panel.message.textContent = "Engine offline — reconnecting…"; });
 
 panel.toggle.addEventListener("click", () => panel.body.classList.toggle("collapsed"));
 
 async function start() {
+  enneagram.start();
   try {
     const source = new WebcamSource(video);
     await source.start();
