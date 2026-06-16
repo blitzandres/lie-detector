@@ -27,7 +27,7 @@ def test_no_face_pauses_cues(tmp_path):
     sess = OverlaySession(gate_threshold=0.65, baseline_seconds=0, log_dir=tmp_path)
     c = sess.process(_feature(0, face=False))
     assert c.active_cues == []
-    assert "no subject" in c.message.lower() or c.status in ("CLEAR", "CALIBRATING")
+    assert "no subject" in c.message.lower()
 
 
 def test_calm_session_stays_clear_or_watch_never_flags(tmp_path):
