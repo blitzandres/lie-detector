@@ -7,9 +7,35 @@ name = "blitz-engine"
 version = "0.1.0"
 description = "Research-first behavioral signal analyzer MVP"
 requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "websockets>=12",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.scripts]
 blitz = "blitz_engine.cli:main"
+blitz-overlay = "blitz_overlay.__main__:main"
 
 [tool.setuptools]
-packages = ["blitz_engine", "core", "core.calibration", "core.fusion", "core.schemas", "modalities", "modalities.audio", "modalities.linguistic"]
+packages = [
+    "blitz_engine",
+    "core", "core.calibration", "core.fusion", "core.schemas",
+    "modalities", "modalities.audio", "modalities.linguistic",
+    "blitz_overlay", "blitz_overlay.cues",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

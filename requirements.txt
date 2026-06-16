@@ -1,0 +1,8 @@
+# Runtime
+fastapi>=0.115
+uvicorn>=0.30
+websockets>=12
+numpy>=1.26
+# Dev
+pytest>=8
+ruff>=0.6
