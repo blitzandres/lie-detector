@@ -8,25 +8,29 @@
 </head>
 <body>
   <header>Blitz Engine · Live Consensus Overlay · webcam · local-only</header>
-  <div class="stage">
-    <video id="cam" playsinline muted></video>
-    <canvas id="overlay"></canvas>
+  <div class="dashboard">
+    <!-- LEFT: camera stage -->
+    <div class="stage">
+      <video id="cam" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+    <!-- RIGHT: signal dashboard -->
+    <section class="panel">
+      <div class="panel-head">
+        <span id="status">CONNECTING</span>
+        <button id="toggle">details</button>
+      </div>
+      <div class="risk-meter"><div id="risk-fill"></div></div>
+      <div id="agree">— of 2 families agree</div>
+      <div id="message"></div>
+      <div class="enneagram-wrap">
+        <canvas id="enneagram" width="300" height="300"></canvas>
+      </div>
+      <div id="panel-body">
+        <ul id="voters"></ul>
+      </div>
+    </section>
   </div>
-  <section class="panel">
-    <div class="panel-head">
-      <span id="status">CONNECTING</span>
-      <button id="toggle">details</button>
-    </div>
-    <div class="risk-meter"><div id="risk-fill"></div></div>
-    <div id="agree">— of 2 families agree</div>
-    <div id="message"></div>
-    <div class="enneagram-wrap">
-      <canvas id="enneagram" width="320" height="320"></canvas>
-    </div>
-    <div id="panel-body">
-      <ul id="voters"></ul>
-    </div>
-  </section>
   <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

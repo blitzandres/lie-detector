@@ -63,3 +63,20 @@ def test_active_cues_carry_region_for_telestrator():
                    regions={"visual.lip_press": "mouth"})
     assert out.active_cues[0].region == "mouth"
     assert out.active_cues[0].cue_id == "visual.lip_press"
+
+
+def test_online_and_activity_fields_propagate():
+    """online_families and family_activity are surfaced on FamilyVote; unwired stays False."""
+    cb = ConsensusBuilder()
+    out = cb.build(
+        cues=[], calibrating=False, ts=1000, regions={},
+        online_families={"visual"}, family_activity={"visual": 0.5},
+    )
+    names = {f.name: f for f in out.families}
+    assert names["visual"].online is True
+    assert names["visual"].activity == 0.5
+    # physio: wired but not in online_families → offline
+    assert names["physio"].online is False
+    # audio: unwired → always offline regardless
+    assert names["audio"].online is False
+    assert names["audio"].activity == 0.0

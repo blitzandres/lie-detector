@@ -16,7 +16,9 @@ class ConsensusBuilder:
         self.gate_threshold = gate_threshold
 
     def build(self, cues, calibrating: bool, ts: int, regions: dict[str, str],
-              message: str = "") -> Consensus:
+              message: str = "",
+              online_families: set[str] | None = None,
+              family_activity: dict[str, float] | None = None) -> Consensus:
         fused = fuse_by_family(cues)
         gate = two_gate(fused, threshold=self.gate_threshold)
         risk = fused["posterior"]
@@ -33,6 +35,8 @@ class ConsensusBuilder:
                 fresh=wired and name in fresh_families,
                 vote=bool(votes.get(name, False)) and wired,
                 contribution=float(contrib.get(name, 0.0)),
+                online=wired and name in (online_families or set()),
+                activity=float((family_activity or {}).get(name, 0.0)),
             ))
 
         active = [

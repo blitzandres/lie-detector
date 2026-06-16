@@ -45,6 +45,18 @@ class OverlaySession:
                 measurements[det.cue_id] = value
         self.baseline.update(measurements, ts_ms=frame.ts)
 
+        # compute continuous family liveness (even below the z>=2 cue threshold)
+        online_families: set[str] = set()
+        family_activity: dict[str, float] = {}
+        for det in self.detectors:
+            if det.cue_id not in measurements:
+                continue
+            fam = det.family
+            online_families.add(fam)
+            z = abs(self.baseline.normalize(det.cue_id, measurements[det.cue_id]))
+            level = max(0.0, min(1.0, z / 6.0))
+            family_activity[fam] = max(family_activity.get(fam, 0.0), level)
+
         cues = []
         for det in self.detectors:
             if det.cue_id not in measurements:
@@ -55,7 +67,8 @@ class OverlaySession:
 
         out = self.consensus.build(
             cues=cues, calibrating=self.baseline.is_calibrating, ts=frame.ts,
-            regions=self.regions)
+            regions=self.regions,
+            online_families=online_families, family_activity=family_activity)
         self._last_consensus = out
         self.logger.log(out, baseline_mode=self.baseline.mode)
         return out
