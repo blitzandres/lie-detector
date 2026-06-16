@@ -1,9 +1,9 @@
 {
   "project": "blitz-engine",
-  "updated_at": "2026-04-13",
-  "phase": "phase_1_engine_core",
+  "updated_at": "2026-06-16",
+  "phase": "phase_1_live_consensus_overlay",
   "status": "in_progress",
-  "summary": "Started implementation with a runnable MVP. Baseline calibration, Bayesian fusion, linguistic text cues, and WAV-based audio cues are now working. Video, visual, physiological, and adapter layers remain unbuilt.",
+  "summary": "Live Consensus Overlay walking skeleton built (Stage 1, webcam-only). Full pipeline: webcam → MediaPipe → feature vector → WebSocket → Python engine (5 visual cues + rPPG, rolling baseline, family fusion, two-gate consensus, prediction log, browser telestrator + consensus panel). One command: blitz-overlay. 63 tests, ruff+pytest CI green. Earlier: baseline calibration, Bayesian fusion, linguistic text cues, WAV-based audio cues.",
   "completed": [
     {
       "id": "package-skeleton",
@@ -44,6 +44,11 @@
       "id": "audio-modality",
       "status": "done",
       "details": "Added modalities/audio/analyzer.py and multimodal session support for WAV-based audio cues."
+    },
+    {
+      "id": "live-consensus-overlay-stage1",
+      "status": "done",
+      "details": "Stage 1 webcam-only overlay: blitz_overlay package (schemas, weights, cues/visual+physio, rppg, consensus, logger, pipeline, server, __main__), core rolling baseline + family fusion/two-gate, FastAPI server serving browser app, deterministic replay test. 63 tests, ruff+pytest CI."
     }
   ],
   "current_limitations": [

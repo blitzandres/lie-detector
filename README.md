@@ -6,6 +6,8 @@ Blitz Engine is a modular, research-driven engine that analyzes text and WAV aud
 
 **Not a lie detector. A behavioral signal analyzer.**
 
+**▶ Run the Live Consensus Overlay (Stage 1):** see [docs/OVERLAY_README.md](docs/OVERLAY_README.md) — one command: `blitz-overlay`.
+
 ---
 
 ## What makes it different

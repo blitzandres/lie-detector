@@ -34,6 +34,8 @@ cue ever requires its verbatim fillers and accuracy justifies it.
 > Note (pre-existing doc error to fix): `LIE_DETECTOR_BLUEPRINT.md` and `docs/CUE_CATALOG.md` library tables
 > list CrisperWhisper as "Apache 2.0" — that is wrong; it is **CC-BY-NC-4.0**. Correct on next pass.
 
+**RESOLVED (2026-06-16):** WhisperX (BSD-2) is the transcription path for later audio stages (also a RAM decision per EXECUTION_ARCHITECTURE §C.1). Stage 1 (Live Consensus Overlay) wires NO live transcription, so this does not block the current build.
+
 ---
 
 ## BLOCKER 2: AU28 (Jaw Tension) Not in OpenGraphAU
@@ -41,6 +43,8 @@ cue ever requires its verbatim fillers and accuracy justifies it.
 OpenGraphAU has 41 AUs but **does not include AU28** (lip suck/jaw tension). The model skips from AU27 to AU32.
 
 Fallback for jaw tension detection: use MediaPipe Face Mesh landmark distances (jaw width ratio over time) — already in the blueprint as a custom approach.
+
+**RESOLVED (2026-06-16):** Implemented as the `visual.jaw_tension` cue via a MediaPipe Face Mesh landmark-distance ratio (gonial landmarks 172↔397 normalized by the outer-eye-corner span 33↔263) in `blitz_overlay/cues/visual.py`. The browser computes the ratio; the engine scores its deviation from the rolling baseline. No OpenGraphAU dependency needed.
 
 ---
 
