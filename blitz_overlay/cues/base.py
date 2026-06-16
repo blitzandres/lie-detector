@@ -44,8 +44,11 @@ class CueDetector(ABC):
     def measure(self, frame: FeatureFrame) -> float | None:
         """Return this cue's scalar measurement for the frame, or None if unavailable."""
 
-    def _quality(self, frame: FeatureFrame) -> float:
-        """Extraction confidence — scales with landmark confidence (spec §8 low-light path)."""
+    def quality(self, frame: FeatureFrame) -> float:
+        """Extraction confidence — scales with landmark confidence (spec §8 low-light path).
+
+        Public and overridable: e.g. the rPPG detector scales this by buffer fill.
+        """
         return max(0.0, min(1.0, frame.confidence))
 
     def update(self, frame: FeatureFrame, baseline: RollingBaseline) -> CueEvent | None:
@@ -65,7 +68,7 @@ class CueDetector(ABC):
             raw_value=float(value),
             z_score=directed_z,
             llr=0.0,
-            quality=self._quality(frame),
+            quality=self.quality(frame),
             question_id="live",
             effect_size_d=self.effect_size_d,
             reliability_tier=self.reliability_tier,
