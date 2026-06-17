@@ -5,11 +5,25 @@
 
 ## 🚦 START HERE — current focus (updated June 16, 2026)
 
-**What we are building right now:** the **Live Consensus Overlay** ("AI-vision") — a real-time,
-sports-analysis-style overlay where MediaPipe maps the face/body, the Python engine detects deception
-**cues** and aggregates them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the
-browser draws a telestrator + consensus panel on top of the video. This is the project's **walking
-skeleton** (engine + UI proven together). Raw video never leaves the device.
+**What this is:** the **Live Consensus Overlay** ("AI-vision") — a real-time, sports-analysis-style
+overlay where MediaPipe maps the face/body, the Python engine detects deception **cues** and aggregates
+them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the browser draws a telestrator
++ consensus panel on top of the video. Raw video never leaves the device. Run it: `blitz-overlay`.
+
+**STATUS (updated June 16, 2026):**
+- ✅ **DONE & on `main` (GitHub):** Stage 1 walking skeleton (Visual + Physio families, 5 visual cues +
+  rPPG, rolling baseline, family fusion + two-gate, consensus, prediction log, FastAPI one-command server,
+  browser telestrator). Plus the **enneagram viz**, **right-hand dashboard layout**, and **live family
+  activity bars** (online + activity per family). 80 tests, ruff+pytest CI.
+- 🔄 **Built, on branch `feat/audio-linguistic` (NOT pushed — awaiting user mic test):** the **Audio family**
+  (browser Web Audio: pitch/pause/tremor → `blitz_overlay/cues/audio.py`, wired voter + enneagram slot 6).
+- ⏭️ **NEXT, in priority order** (details in the dev memory `project_blitz_overlay.md`): (1) **Linguistic family**
+  (live transcript via Web Speech API → reuse `modalities/linguistic/analyzer.py` lexicon cues → `cues/linguistic.py`);
+  (2) **Cross-modal coherence meta-cue** (audio×movement sync = channel discrepancy / speech-gesture mismatch —
+  WebSearch the literature first, then a low-weight cross-family modifier); (3) **"Bell" alarm + trust log**
+  (earned bell only on a sustained all-families two-gate FLAG; bell frequency over time = inverse trust meter);
+  (4) **Body/Posture as a 5th family** (MediaPipe Pose: postural shifts, self-adaptors, shrug, reduced gestures — low weight).
+- The 4 consensus voters are **Visual · Audio · Linguistic · Physio** (Audio now live; Body would make 5).
 
 **AI agents — read in this order before building:**
 1. `docs/superpowers/specs/2026-06-16-live-consensus-overlay-design.md` — the approved design spec (WHAT to build).
