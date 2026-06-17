@@ -82,7 +82,8 @@ function loop() {
       frame.transcript = t;
       _lastTranscriptSeq = t.seq;
     }
-    caption.textContent = t.text;
+    // Display only the most recent ~16 words; CSS clamps the box to 2 lines max.
+    caption.textContent = t.text.split(/\s+/).slice(-16).join(" ");
   }
   ws.send(frame);
   renderer.draw(extractor.lastLandmarks);

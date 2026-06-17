@@ -152,7 +152,14 @@ header {
   border-radius: 6px;
   text-align: center;
   pointer-events: none;
+  /* Hard cap at 2 lines overlaying the video — newest words only (trimmed in JS). */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   min-height: 1.4em;
+  max-height: 2.8em;
 }
 .stt-notice {
   position: absolute;
