@@ -47,8 +47,9 @@ def test_logger_appends_multiple_lines(tmp_path):
 
 def test_logger_writes_bell_record(tmp_path):
     import json
+
     from blitz_overlay.logger import PredictionLogger
-    from blitz_overlay.schemas import Consensus, SCHEMA_VERSION
+    from blitz_overlay.schemas import SCHEMA_VERSION, Consensus
 
     logger = PredictionLogger("sess-bell", log_dir=tmp_path)
     c = Consensus(schema_version=SCHEMA_VERSION, ts=1600, status="FLAG", risk=0.9,
@@ -64,8 +65,9 @@ def test_logger_writes_bell_record(tmp_path):
 
 def test_logger_bell_record_null_when_silent(tmp_path):
     import json
+
     from blitz_overlay.logger import PredictionLogger
-    from blitz_overlay.schemas import Consensus, SCHEMA_VERSION
+    from blitz_overlay.schemas import SCHEMA_VERSION, Consensus
 
     logger = PredictionLogger("sess-quiet", log_dir=tmp_path)
     c = Consensus(schema_version=SCHEMA_VERSION, ts=1, status="CLEAR", risk=0.1,

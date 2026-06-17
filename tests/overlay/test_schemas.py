@@ -119,7 +119,7 @@ def test_cue_row_to_dict():
 
 
 def test_consensus_to_dict_includes_verifier_fields():
-    from blitz_overlay.schemas import Consensus, CueRow, SCHEMA_VERSION
+    from blitz_overlay.schemas import SCHEMA_VERSION, Consensus, CueRow
     c = Consensus(schema_version=SCHEMA_VERSION, ts=0, status="CLEAR", risk=0.1,
                   flag=False, n_agree=0, n_required=2,
                   cue_rows=[CueRow("visual.gaze_aversion", "visual", "eyes",
