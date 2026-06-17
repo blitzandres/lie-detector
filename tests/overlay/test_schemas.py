@@ -99,3 +99,34 @@ def test_consensus_to_dict_is_json_serializable():
     payload = json.dumps(consensus.to_dict())
     assert '"status": "WATCH"' in payload
     assert '"region": "eyes"' in payload
+
+
+def test_feature_frame_carries_config_block():
+    from blitz_overlay.schemas import FeatureFrame
+    frame = FeatureFrame.from_dict({"ts": 1, "face_present": True,
+                                    "config": {"sensitivity": 0.7}})
+    assert frame.config == {"sensitivity": 0.7}
+    assert FeatureFrame.from_dict({"ts": 1}).config is None
+
+
+def test_cue_row_to_dict():
+    from blitz_overlay.schemas import CueRow
+    row = CueRow(cue_id="visual.gaze_aversion", family="visual", region="eyes",
+                 label="gaze_aversion", z=3.21, lit=True, online=True)
+    d = row.to_dict()
+    assert d == {"cue_id": "visual.gaze_aversion", "family": "visual", "region": "eyes",
+                 "label": "gaze_aversion", "z": 3.21, "lit": True, "online": True}
+
+
+def test_consensus_to_dict_includes_verifier_fields():
+    from blitz_overlay.schemas import Consensus, CueRow, SCHEMA_VERSION
+    c = Consensus(schema_version=SCHEMA_VERSION, ts=0, status="CLEAR", risk=0.1,
+                  flag=False, n_agree=0, n_required=2,
+                  cue_rows=[CueRow("visual.gaze_aversion", "visual", "eyes",
+                                   "gaze_aversion", 0.0, False, True)],
+                  convergence={"n_lit": 0, "n_families": 0, "burst": False},
+                  bell={"ringing": False, "just_rang": False})
+    d = c.to_dict()
+    assert d["cue_rows"][0]["cue_id"] == "visual.gaze_aversion"
+    assert d["convergence"]["burst"] is False
+    assert d["bell"]["ringing"] is False
