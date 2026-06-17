@@ -96,6 +96,62 @@ CUE_WEIGHTS: dict[str, dict] = {
             " cognitive load or withholding; weak-moderate, d~0.3."
         ),
     },
+    "linguistic.sensory_detail_poverty": {
+        "effect_size_d": 0.29, "reliability_tier": 2,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — Reality Monitoring sensory-detail poverty; truthful accounts carry"
+            " more perceptual detail (RESEARCH.md RM/CBCA); person-relative, d~0.29."
+        ),
+    },
+    "linguistic.pronoun_avoidance": {
+        "effect_size_d": 0.27, "reliability_tier": 2,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — reduced first-person pronoun use / self-distancing under deception"
+            " (Newman/Pennebaker LIWC; RESEARCH.md), d~0.27."
+        ),
+    },
+    "linguistic.distancing_language": {
+        "effect_size_d": 0.24, "reliability_tier": 2,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — distancing / third-person referents replacing direct reference"
+            " (RESEARCH.md distancing language), d~0.24."
+        ),
+    },
+    "linguistic.filler_ratio": {
+        "effect_size_d": 0.23, "reliability_tier": 3,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — filler / hesitation marker rate as cognitive-load proxy"
+            " (RESEARCH.md), weak-moderate d~0.23."
+        ),
+    },
+    "linguistic.qualifier_overload": {
+        "effect_size_d": 0.21, "reliability_tier": 3,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — qualifier / hedge overload signalling uncommitted speech"
+            " (RESEARCH.md), weak d~0.21."
+        ),
+    },
+    "linguistic.negative_emotion_density": {
+        "effect_size_d": 0.18, "reliability_tier": 3,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — elevated negative-emotion word density (LIWC; RESEARCH.md),"
+            " weak d~0.18."
+        ),
+    },
+    "linguistic.lexical_diversity_drop": {
+        "effect_size_d": 0.16, "reliability_tier": 3,
+        "family": "linguistic", "region": "mouth",
+        "citation": (
+            "Catalog cue — reduced lexical diversity (type-token ratio) under cognitive load"
+            " (RESEARCH.md), weak d~0.16 (anchor-tier)."
+        ),
+    },
 }
 
 
