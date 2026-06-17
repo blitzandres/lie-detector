@@ -27,6 +27,7 @@ class PredictionLogger:
             "status": consensus.status,
             "posterior": consensus.risk,
             "flag": consensus.flag,
+            "bell_record": (consensus.bell or {}).get("record") if (consensus.bell or {}).get("just_rang") else None,
             "n_agree": consensus.n_agree,
             "n_required": consensus.n_required,
             "families": [f.to_dict() for f in consensus.families],
