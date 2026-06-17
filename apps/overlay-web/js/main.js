@@ -6,6 +6,8 @@ import { WebSpeechTranscriber } from "./transcriber.js";
 import { WsClient } from "./ws-client.js";
 import { OverlayRenderer } from "./overlay-renderer.js";
 import { Enneagram } from "./enneagram.js";
+import { CueVerifier } from "./cue-verifier.js";
+import { BellPlayer } from "./bell.js";
 
 const video = document.getElementById("cam");
 const canvas = document.getElementById("overlay");
@@ -36,8 +38,27 @@ document.getElementById("stt-toggle").addEventListener("click", () => {
     caption.textContent = "";
   }
 });
+const cueVerifier = new CueVerifier({
+  rows: document.getElementById("cue-rows"),
+  verdict: document.getElementById("verdict"),
+  convergence: document.getElementById("convergence"),
+});
+const bellPlayer = new BellPlayer();
+const trustEl = document.getElementById("trust");
+let _sensitivity = 0;
+document.getElementById("sens").addEventListener("input", (e) => {
+  _sensitivity = parseFloat(e.target.value);
+});
+
 const wsUrl = `ws://${location.host}/ws`;
-const ws = new WsClient(wsUrl, (c) => { renderer.setConsensus(c); enneagram.setConsensus(c); },
+const ws = new WsClient(wsUrl, (c) => {
+  renderer.setConsensus(c);
+  enneagram.setConsensus(c);
+  cueVerifier.setConsensus(c);
+  bellPlayer.handle(c.bell);
+  trustEl.textContent =
+    `trust: ${Math.round(bellPlayer.trust() * 100)}% · bells/min: ${bellPlayer.bellCount()}`;
+},
   (s) => { if (s === "engine-offline") panel.message.textContent = "Engine offline — reconnecting…"; });
 
 panel.toggle.addEventListener("click", () => panel.body.classList.toggle("collapsed"));
@@ -85,6 +106,7 @@ function loop() {
     // Display only the most recent ~16 words; CSS clamps the box to 2 lines max.
     caption.textContent = t.text.split(/\s+/).slice(-16).join(" ");
   }
+  frame.config = { sensitivity: _sensitivity };
   ws.send(frame);
   renderer.draw(extractor.lastLandmarks);
   requestAnimationFrame(loop);
