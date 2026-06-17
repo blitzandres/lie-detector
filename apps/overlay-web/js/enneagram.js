@@ -7,7 +7,7 @@ const STATUS_COLORS = {
   FLAG: "#ea5455",
 };
 
-// 9 cue slots in fixed order — last 3 are placeholders for future families
+// 9 cue slots in fixed order — slots 7-8 are placeholders for future families
 const CUE_SLOTS = [
   "visual.gaze_aversion",
   "visual.blink_rate",
@@ -15,7 +15,7 @@ const CUE_SLOTS = [
   "visual.lip_press",
   "visual.jaw_tension",
   "physio.heart_rate",
-  "audio.voice",
+  "audio.tremor",
   "linguistic.verbal",
   "cbca.content",
 ];
@@ -35,7 +35,7 @@ const CUE_LABELS = [
   "lip_press",
   "jaw_tension",
   "heart_rate",
-  "voice",
+  "tremor",
   "verbal",
   "content",
 ];

@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from blitz_overlay.consensus import ConsensusBuilder
+from blitz_overlay.cues.audio import AUDIO_DETECTORS
 from blitz_overlay.cues.physio import RppgHeartRate
 from blitz_overlay.cues.visual import VISUAL_DETECTORS
 from blitz_overlay.logger import PredictionLogger
@@ -18,7 +19,11 @@ class OverlaySession:
     def __init__(self, gate_threshold: float = 0.65, baseline_seconds: int = 90,
                  fps: float = 30.0, log_dir: str | Path = "logs"):
         self.session_id = uuid.uuid4().hex[:12]
-        self.detectors = [cls() for cls in VISUAL_DETECTORS] + [RppgHeartRate(fps=fps)]
+        self.detectors = (
+            [cls() for cls in VISUAL_DETECTORS]
+            + [cls() for cls in AUDIO_DETECTORS]
+            + [RppgHeartRate(fps=fps)]
+        )
         self.baseline = RollingBaseline(baseline_seconds=baseline_seconds)
         self.consensus = ConsensusBuilder(gate_threshold=gate_threshold)
         self.logger = PredictionLogger(self.session_id, log_dir=log_dir)

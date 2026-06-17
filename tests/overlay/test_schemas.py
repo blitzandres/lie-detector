@@ -32,6 +32,31 @@ def test_feature_frame_tolerates_missing_optionals():
     assert frame.face_present is False
     assert frame.blendshapes == {}
     assert frame.rppg is None
+    assert frame.audio is None
+
+
+def test_feature_frame_audio_roundtrip():
+    """Audio block is preserved through from_dict when present."""
+    raw = {
+        "ts": 2000,
+        "face_present": True,
+        "confidence": 0.9,
+        "blendshapes": {},
+        "geometry": {},
+        "head_pose": {},
+        "audio": {"f0": 120.5, "energy": 0.03, "pause_ratio": 0.2, "tremor": 0.05},
+    }
+    frame = FeatureFrame.from_dict(raw)
+    assert frame.audio is not None
+    assert abs(frame.audio["f0"] - 120.5) < 1e-9
+    assert abs(frame.audio["pause_ratio"] - 0.2) < 1e-9
+    assert abs(frame.audio["tremor"] - 0.05) < 1e-9
+
+
+def test_feature_frame_audio_absent_when_key_missing():
+    """audio=None when the key is not present in the raw dict."""
+    frame = FeatureFrame.from_dict({"ts": 3000, "face_present": True, "confidence": 0.5})
+    assert frame.audio is None
 
 
 def test_region_enum_values():

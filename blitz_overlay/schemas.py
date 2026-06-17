@@ -34,6 +34,7 @@ class FeatureFrame:
     head_pose: dict = field(default_factory=dict)     # yaw/pitch/roll (degrees)
     geometry: dict = field(default_factory=dict)      # jaw_width_ratio, gaze_x, gaze_y, ear_*
     rppg: dict | None = None                  # {"forehead_rgb":[r,g,b], "cheek_rgb":[r,g,b]} or None
+    audio: dict | None = None                 # {"f0":Hz, "energy":rms, "pause_ratio":0-1, "tremor":cv} or None
     schema_version: str = SCHEMA_VERSION
 
     @classmethod
@@ -46,6 +47,7 @@ class FeatureFrame:
             head_pose=dict(d.get("head_pose") or {}),
             geometry=dict(d.get("geometry") or {}),
             rppg=(dict(d["rppg"]) if d.get("rppg") else None),
+            audio=(dict(d["audio"]) if d.get("audio") else None),
             schema_version=str(d.get("schema_version", SCHEMA_VERSION)),
         )
 

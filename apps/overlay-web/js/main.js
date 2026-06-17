@@ -1,6 +1,7 @@
 import { WebcamSource } from "./capture.js";
 import { MediaPipeExtractor } from "./mediapipe-extractor.js";
 import { RppgSampler } from "./rppg-sampler.js";
+import { AudioCapture } from "./audio-capture.js";
 import { WsClient } from "./ws-client.js";
 import { OverlayRenderer } from "./overlay-renderer.js";
 import { Enneagram } from "./enneagram.js";
@@ -19,6 +20,7 @@ const panel = {
 
 const extractor = new MediaPipeExtractor();
 const sampler = new RppgSampler();
+const audio = new AudioCapture();
 const renderer = new OverlayRenderer(canvas, panel);
 const enneagram = new Enneagram(document.getElementById("enneagram"));
 const wsUrl = `ws://${location.host}/ws`;
@@ -29,6 +31,12 @@ panel.toggle.addEventListener("click", () => panel.body.classList.toggle("collap
 
 async function start() {
   enneagram.start();
+  // Mic capture: independent try/catch — a denied mic must never kill the visual overlay.
+  try {
+    await audio.start();
+  } catch (err) {
+    console.warn("[main] Mic start failed (non-fatal):", err.message);
+  }
   try {
     const source = new WebcamSource(video);
     await source.start();
@@ -47,6 +55,10 @@ function loop() {
   const frame = extractor.extract(video, ts);
   if (frame.face_present && extractor.lastLandmarks) {
     frame.rppg = sampler.sample(video, extractor.lastLandmarks);
+  }
+  // Attach audio block when mic is live (nulls omitted so Python side sees absence cleanly)
+  if (audio.available) {
+    frame.audio = audio.latest();
   }
   ws.send(frame);
   renderer.draw(extractor.lastLandmarks);

@@ -51,7 +51,9 @@ def test_unwired_families_shown_not_fresh():
     cb = ConsensusBuilder()
     out = cb.build(cues=[], calibrating=False, ts=1000, regions={})
     names = {f.name: f for f in out.families}
-    assert names["audio"].wired is False and names["audio"].fresh is False
+    # Stage 1 wires visual + physio + audio; linguistic remains unwired
+    assert names["audio"].wired is True   # audio is now a wired family
+    assert names["audio"].fresh is False  # no active cues → not fresh
     assert names["linguistic"].wired is False
     assert names["visual"].wired is True
 
@@ -77,6 +79,6 @@ def test_online_and_activity_fields_propagate():
     assert names["visual"].activity == 0.5
     # physio: wired but not in online_families → offline
     assert names["physio"].online is False
-    # audio: unwired → always offline regardless
+    # audio: wired but not in online_families → offline (no mic data in this call)
     assert names["audio"].online is False
     assert names["audio"].activity == 0.0

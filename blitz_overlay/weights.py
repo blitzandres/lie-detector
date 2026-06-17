@@ -66,6 +66,36 @@ CUE_WEIGHTS: dict[str, dict] = {
             "Catalog cue 38 — rPPG heart-rate elevation, autonomic arousal proxy."
         ),
     },
+    "audio.tremor": {
+        "effect_size_d": 0.40,
+        "reliability_tier": 2,
+        "family": "audio",
+        "region": "head",
+        "citation": (
+            "Catalog cue 22 — vocal tremor/jitter; strongest single audio cue for"
+            " stress/cognitive load; d~0.4 moderate effect (CUE_CATALOG.md)."
+        ),
+    },
+    "audio.pitch_f0": {
+        "effect_size_d": 0.30,
+        "reliability_tier": 3,
+        "family": "audio",
+        "region": "head",
+        "citation": (
+            "Catalog cue 21 — F0 elevation under stress/cognitive load;"
+            " weak-moderate single-cue diagnosticity, d~0.3."
+        ),
+    },
+    "audio.pause_ratio": {
+        "effect_size_d": 0.30,
+        "reliability_tier": 3,
+        "family": "audio",
+        "region": "head",
+        "citation": (
+            "Catalog cue 26 — pause duration/ratio; increased pausing under"
+            " cognitive load or withholding; weak-moderate, d~0.3."
+        ),
+    },
 }
 
 

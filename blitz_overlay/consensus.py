@@ -4,8 +4,8 @@ from __future__ import annotations
 from blitz_overlay.schemas import SCHEMA_VERSION, ActiveCue, Consensus, FamilyVote
 from core.fusion.bayesian_fusion import family_of, fuse_by_family, two_gate
 
-# Families displayed as voters, in panel order. Stage 1 wires visual + physio only.
-WIRED_FAMILIES = {"visual", "physio"}
+# Families displayed as voters, in panel order. Stage 1 wires visual + physio + audio.
+WIRED_FAMILIES = {"visual", "physio", "audio"}
 PANEL_FAMILIES = ["visual", "physio", "audio", "linguistic"]
 
 WATCH_RISK = 0.45  # risk above this (but not a FLAG) shows WATCH
