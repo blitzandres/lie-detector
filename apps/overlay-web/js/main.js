@@ -8,6 +8,7 @@ import { OverlayRenderer } from "./overlay-renderer.js";
 import { Enneagram } from "./enneagram.js";
 import { CueVerifier } from "./cue-verifier.js";
 import { BellPlayer } from "./bell.js";
+import { CueTimeline } from "./cue-timeline.js";
 
 const video = document.getElementById("cam");
 const canvas = document.getElementById("overlay");
@@ -44,6 +45,7 @@ const cueVerifier = new CueVerifier({
   convergence: document.getElementById("convergence"),
 });
 const bellPlayer = new BellPlayer();
+const cueTimeline = new CueTimeline(document.getElementById("cue-timeline"));
 const trustEl = document.getElementById("trust");
 let _sensitivity = 0;
 document.getElementById("sens").addEventListener("input", (e) => {
@@ -55,6 +57,7 @@ const ws = new WsClient(wsUrl, (c) => {
   renderer.setConsensus(c);
   enneagram.setConsensus(c);
   cueVerifier.setConsensus(c);
+  cueTimeline.push(c);
   bellPlayer.handle(c.bell);
   trustEl.textContent =
     `trust: ${Math.round(bellPlayer.trust() * 100)}% · bells/min: ${bellPlayer.bellCount()}`;
@@ -65,6 +68,7 @@ panel.toggle.addEventListener("click", () => panel.body.classList.toggle("collap
 
 async function start() {
   enneagram.start();
+  cueTimeline.start();
   // Mic capture: independent try/catch — a denied mic must never kill the visual overlay.
   try {
     await audio.start();
