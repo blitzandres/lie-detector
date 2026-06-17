@@ -6,6 +6,7 @@ from pathlib import Path
 
 from blitz_overlay.consensus import ConsensusBuilder
 from blitz_overlay.cues.audio import AUDIO_DETECTORS
+from blitz_overlay.cues.linguistic import LINGUISTIC_DETECTORS
 from blitz_overlay.cues.physio import RppgHeartRate
 from blitz_overlay.cues.visual import VISUAL_DETECTORS
 from blitz_overlay.logger import PredictionLogger
@@ -22,6 +23,7 @@ class OverlaySession:
         self.detectors = (
             [cls() for cls in VISUAL_DETECTORS]
             + [cls() for cls in AUDIO_DETECTORS]
+            + [cls() for cls in LINGUISTIC_DETECTORS]
             + [RppgHeartRate(fps=fps)]
         )
         self.baseline = RollingBaseline(baseline_seconds=baseline_seconds)
@@ -30,9 +32,19 @@ class OverlaySession:
         self.regions = {d.cue_id: d.region for d in self.detectors}
         self._last_emit_ts = -EMIT_EVERY_MS
         self._last_consensus: Consensus | None = None
+        self._last_transcript_seq: int | None = None
 
     def process(self, raw: dict) -> Consensus:
         frame = FeatureFrame.from_dict(raw)
+
+        # Per-utterance gate: a repeated transcript seq is treated as absent so the
+        # rolling baseline samples linguistic cues per utterance, not per 30 Hz frame.
+        if frame.transcript is not None:
+            seq = frame.transcript.get("seq")
+            if seq is not None and seq == self._last_transcript_seq:
+                frame.transcript = None
+            else:
+                self._last_transcript_seq = seq
 
         if not frame.face_present:
             out = self.consensus.build(
