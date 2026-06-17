@@ -94,3 +94,24 @@ def test_online_and_activity_fields_propagate():
     # audio: wired but not in online_families → offline (no mic data in this call)
     assert names["audio"].online is False
     assert names["audio"].activity == 0.0
+
+
+def test_build_attaches_cue_rows_convergence_bell():
+    from blitz_overlay.schemas import CueRow
+    cb = ConsensusBuilder()
+    rows = [CueRow("visual.gaze_aversion", "visual", "eyes", "gaze_aversion", 3.0, True, True)]
+    conv = {"n_lit": 1, "n_families": 1, "burst": False, "lit_cue_ids": ["visual.gaze_aversion"]}
+    bell = {"ringing": False, "just_rang": False, "label": "strong deception-pattern convergence"}
+    out = cb.build(cues=[], calibrating=False, ts=1000, regions={},
+                   cue_rows=rows, convergence=conv, bell=bell)
+    assert out.cue_rows == rows
+    assert out.convergence == conv
+    assert out.bell == bell
+
+
+def test_build_defaults_verifier_fields_empty():
+    cb = ConsensusBuilder()
+    out = cb.build(cues=[], calibrating=False, ts=1000, regions={})
+    assert out.cue_rows == []
+    assert out.convergence == {}
+    assert out.bell == {}

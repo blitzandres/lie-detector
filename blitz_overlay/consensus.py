@@ -18,7 +18,8 @@ class ConsensusBuilder:
     def build(self, cues, calibrating: bool, ts: int, regions: dict[str, str],
               message: str = "",
               online_families: set[str] | None = None,
-              family_activity: dict[str, float] | None = None) -> Consensus:
+              family_activity: dict[str, float] | None = None,
+              cue_rows=None, convergence=None, bell=None) -> Consensus:
         fused = fuse_by_family(cues)
         gate = two_gate(fused, threshold=self.gate_threshold)
         risk = fused["posterior"]
@@ -70,5 +71,8 @@ class ConsensusBuilder:
             n_required=gate["n_required"],
             families=families,
             active_cues=active,
+            cue_rows=cue_rows or [],
+            convergence=convergence or {},
+            bell=bell or {},
             message=message,
         )
