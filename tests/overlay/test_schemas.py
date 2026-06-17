@@ -64,6 +64,21 @@ def test_region_enum_values():
     assert {r.value for r in Region} >= {"eyes", "brow", "mouth", "jaw", "forehead"}
 
 
+def test_feature_frame_carries_transcript_block():
+    from blitz_overlay.schemas import FeatureFrame
+    frame = FeatureFrame.from_dict({
+        "ts": 10, "face_present": True, "confidence": 0.9,
+        "transcript": {"text": "i was at home all night", "seq": 3},
+    })
+    assert frame.transcript == {"text": "i was at home all night", "seq": 3}
+
+
+def test_feature_frame_transcript_absent_is_none():
+    from blitz_overlay.schemas import FeatureFrame
+    frame = FeatureFrame.from_dict({"ts": 10, "face_present": True})
+    assert frame.transcript is None
+
+
 def test_consensus_to_dict_is_json_serializable():
     import json
     consensus = Consensus(
