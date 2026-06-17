@@ -104,7 +104,15 @@ export class Enneagram {
     const cues = c ? c.active_cues || [] : [];
     for (let i = 0; i < 9; i++) {
       const slotId = CUE_SLOTS[i];
-      const hit = cues.find((cu) => cu.cue_id === slotId);
+      let hit;
+      if (slotId === "linguistic.verbal") {
+        // Aggregate: strongest active linguistic.* cue drives the verbal slot.
+        hit = cues
+          .filter((cu) => cu.cue_id.startsWith("linguistic."))
+          .sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
+      } else {
+        hit = cues.find((cu) => cu.cue_id === slotId);
+      }
       const targetPull = hit ? Math.max(0, Math.min(1, hit.z / 6)) : 0;
       this._pull[i] += (targetPull - this._pull[i]) * EASE;
       // Glow slightly faster than pull for snappier visual feedback
