@@ -138,6 +138,40 @@ header {
   box-shadow: 0 0 18px rgba(91, 141, 239, 0.12), 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
+/* ─── Live transcript caption strip + honest cloud-STT notice ─── */
+.caption {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  max-width: 80%;
+  padding: 6px 12px;
+  font: 14px/1.4 monospace;
+  color: #e6edf3;
+  background: rgba(11, 15, 20, 0.62);
+  border-radius: 6px;
+  text-align: center;
+  pointer-events: none;
+  min-height: 1.4em;
+}
+.stt-notice {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  font: 11px/1 monospace;
+  color: #7d8da3;
+}
+.stt-notice button {
+  margin-left: 6px;
+  font: 11px/1 monospace;
+  color: #5b8def;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 /* ─── Narrow / small-screen fallback: allow page scroll, stack columns ─── */
 @media (max-width: 840px) {
   body { overflow: auto; }
