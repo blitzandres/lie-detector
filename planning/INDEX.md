@@ -25,6 +25,23 @@ them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the br
   (4) **Body/Posture as a 5th family** (MediaPipe Pose: postural shifts, self-adaptors, shrug, reduced gestures — low weight).
 - The 4 consensus voters are **Visual · Audio · Linguistic · Physio** (Audio now live; Body would make 5).
 
+**ENVIRONMENT / where + how it operates (so we never redo this):**
+- Machine: **macOS (darwin), shell zsh, Apple M1 / 8 GB RAM** — everything runs **locally**.
+- Python: **`/opt/homebrew/bin/python3` = 3.14, NO venv**. Deps installed globally via homebrew pip
+  (numpy, fastapi, uvicorn, websockets, starlette, pytest, ruff, httpx — all present).
+- Run it: **`python3 -m blitz_overlay`** (works as-is) or **`blitz-overlay`** (console script; needs
+  `pip install -e .` first — NOT yet run). Serves **http://127.0.0.1:8000**.
+- Config via `.env` / `BLITZ_OVERLAY_*`: `PORT` (8000), `GATE` (0.65), `BASELINE_SECONDS` (90; use **20**
+  for quick demos), `OPEN_BROWSER` (1; set 0 to not auto-open), `LOG_DIR` (logs/). No API keys needed.
+- Git: remote `origin` = **github.com/blitzandres/lie-detector**. Work on feature branches; after the
+  feature is confirmed working in the browser, **merge to `main` + push**. Commit trailer:
+  `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+- Verify: **`python3 -m pytest -q`** and **`python3 -m ruff check .`** — both MUST stay green.
+- Only external network call: the browser fetches the **MediaPipe model from a CDN once**; all cue
+  detection / fusion / consensus / rPPG run **on-device**. Raw video + audio never leave the browser.
+- Browser app served from `apps/overlay-web/` (static, vanilla ES modules, no bundler); Python engine
+  package is `blitz_overlay/`; reusable core math in `core/` (calibration, fusion, schemas).
+
 **AI agents — read in this order before building:**
 1. `docs/superpowers/specs/2026-06-16-live-consensus-overlay-design.md` — the approved design spec (WHAT to build).
 2. `planning/READINESS.md` — the 21 definition-of-ready items (gate before/at build start; the overlay IS item #5).
