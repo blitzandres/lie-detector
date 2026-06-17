@@ -6,6 +6,12 @@ heart rate, fuses them by family with a two-gate consensus, and draws a telestra
 panel. **Raw video never leaves your device** — only tiny feature vectors reach the engine over
 a localhost WebSocket. GitHub stores the code and runs CI; it never runs the live app.
 
+> **Audio caveat (Linguistic family):** the only path by which audio leaves the device is the
+> optional **Linguistic transcriber** — when enabled it uses Chrome's Web Speech API, which streams
+> mic audio to Google for transcription (no install/login). Video still never leaves the browser,
+> and a fully-local Whisper adapter (no external call) is the documented upgrade behind the same
+> `Transcriber` seam. A clear in-page notice + disable toggle appear while it is active.
+
 Honest framing: statuses are **CALIBRATING → CLEAR → WATCH → FLAG**, never a binary "LIE".
 A red pulse fires *only* on a two-gate FLAG (≥2 independent families agree AND combined risk ≥ 0.65).
 

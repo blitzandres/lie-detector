@@ -37,8 +37,12 @@ them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the br
   feature is confirmed working in the browser, **merge to `main` + push**. Commit trailer:
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - Verify: **`python3 -m pytest -q`** and **`python3 -m ruff check .`** — both MUST stay green.
-- Only external network call: the browser fetches the **MediaPipe model from a CDN once**; all cue
-  detection / fusion / consensus / rPPG run **on-device**. Raw video + audio never leave the browser.
+- External network calls: (1) the browser fetches the **MediaPipe model from a CDN once**; (2) when
+  the **Linguistic transcriber is enabled, Chrome's Web Speech API streams mic audio to Google for
+  transcription** — the only path by which audio leaves the device. All cue detection / fusion /
+  consensus / rPPG run **on-device**; raw **video** never leaves the browser. Web Speech is the
+  pragmatic transcript source (zero install/login); a fully-local Whisper adapter (no external call)
+  is the documented upgrade behind the `Transcriber` seam.
 - Browser app served from `apps/overlay-web/` (static, vanilla ES modules, no bundler); Python engine
   package is `blitz_overlay/`; reusable core math in `core/` (calibration, fusion, schemas).
 
