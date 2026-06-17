@@ -54,8 +54,20 @@ def test_unwired_families_shown_not_fresh():
     # Stage 1 wires visual + physio + audio; linguistic remains unwired
     assert names["audio"].wired is True   # audio is now a wired family
     assert names["audio"].fresh is False  # no active cues → not fresh
-    assert names["linguistic"].wired is False
+    assert names["linguistic"].wired is True   # linguistic is now a wired family
     assert names["visual"].wired is True
+
+
+def test_flag_reachable_via_visual_and_linguistic():
+    cb = ConsensusBuilder()
+    cues = [_cue("visual.gaze_aversion", Modality.VISUAL, 7.0, "eyes", d=0.7),
+            _cue("linguistic.pronoun_avoidance", Modality.LINGUISTIC, 7.0, "mouth", d=0.27)]
+    out = cb.build(cues=cues, calibrating=False, ts=1000,
+                   regions={"visual.gaze_aversion": "eyes",
+                            "linguistic.pronoun_avoidance": "mouth"})
+    assert out.status == "FLAG"
+    assert out.flag is True
+    assert out.n_agree == 2
 
 
 def test_active_cues_carry_region_for_telestrator():
