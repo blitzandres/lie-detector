@@ -59,6 +59,8 @@ class FamilyVote:
     fresh: bool          # has it produced a recent, usable signal?
     vote: bool           # does it currently vote "flag"?
     contribution: float  # its log-odds contribution to combined risk
+    online: bool = False    # wired family is receiving data this frame (face present + a measurement)
+    activity: float = 0.0   # 0..1 live signal level for this family (max normalized |z| across its cues)
 
     def to_dict(self) -> dict:
         return {
@@ -67,6 +69,8 @@ class FamilyVote:
             "fresh": self.fresh,
             "vote": self.vote,
             "contribution": round(self.contribution, 4),
+            "online": self.online,
+            "activity": round(self.activity, 4),
         }
 
 

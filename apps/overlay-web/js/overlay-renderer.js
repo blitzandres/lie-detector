@@ -50,9 +50,44 @@ export class OverlayRenderer {
     this.panel.voters.innerHTML = "";
     for (const f of c.families) {
       const li = document.createElement("li");
-      const state = !f.wired ? "—" : f.fresh ? (f.vote ? "FLAG" : "fresh") : "stale";
-      li.textContent = `${f.name.padEnd(11)} ${state}`;
       li.className = `voter ${f.wired ? "wired" : "unwired"} ${f.vote ? "voting" : ""}`;
+      // Set the CSS custom property for status color on the row
+      li.style.setProperty("--status-color", color);
+
+      // Online dot
+      const dot = document.createElement("span");
+      dot.className = `voter-dot${f.online ? " online" : ""}`;
+
+      // Family name
+      const name = document.createElement("span");
+      name.className = "voter-name";
+      name.textContent = f.name;
+
+      // Activity bar (only meaningful for wired online families)
+      const barWrap = document.createElement("span");
+      barWrap.className = "voter-bar-wrap";
+      const bar = document.createElement("span");
+      bar.className = "voter-bar";
+      bar.style.width = `${Math.round((f.activity || 0) * 100)}%`;
+      barWrap.appendChild(bar);
+
+      // State label
+      const label = document.createElement("span");
+      label.className = "voter-label";
+      if (!f.wired) {
+        label.textContent = "—";           // em dash for unwired
+      } else if (f.vote) {
+        label.textContent = "FLAG";
+      } else if (f.online) {
+        label.textContent = "live";
+      } else {
+        label.textContent = "idle";
+      }
+
+      li.appendChild(dot);
+      li.appendChild(name);
+      li.appendChild(barWrap);
+      li.appendChild(label);
       this.panel.voters.appendChild(li);
     }
   }

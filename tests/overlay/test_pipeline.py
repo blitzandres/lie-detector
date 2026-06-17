@@ -45,3 +45,25 @@ def test_writes_prediction_log(tmp_path):
     sess.process(_feature(100))
     logs = list(tmp_path.glob("*.jsonl"))
     assert logs and logs[0].read_text().strip()
+
+
+def test_family_online_and_activity_after_calibration(tmp_path):
+    """After calibration, a face-present frame yields visual family online=True + activity>=0.
+
+    online=True means the family has detectors producing measurements this frame.
+    activity can be 0 during calm/flat baseline (normalize returns 0 when z≈0), but the
+    online flag itself proves data is flowing.  We separately confirm activity is a valid
+    float in [0, 1].
+    """
+    # baseline_seconds=0: calibration completes immediately; feed 10 frames so normalize
+    # has ≥5 observations per cue (required by RollingBaseline.normalize)
+    sess = OverlaySession(gate_threshold=0.65, baseline_seconds=0, log_dir=tmp_path)
+    last = None
+    for i in range(10):
+        last = sess.process(_feature(int(i * 100)))
+    c = last
+    names = {f.name: f for f in c.families}
+    visual = names["visual"]
+    assert visual.online is True, "visual family should be online with face present + measurements"
+    assert 0.0 <= visual.activity <= 1.0, "activity must be a valid float in [0, 1]"
+    assert c.status in ("CLEAR", "WATCH", "CALIBRATING")
