@@ -152,6 +152,53 @@ CUE_WEIGHTS: dict[str, dict] = {
             " (RESEARCH.md), weak d~0.16 (anchor-tier)."
         ),
     },
+    "visual.gaze_fixation": {
+        "effect_size_d": 0.50, "reliability_tier": 2,
+        "family": "visual", "region": "eyes",
+        "citation": (
+            "Catalog cue 56 — gaze fixation pattern (count/duration); fabrication = more"
+            " frequent, shorter fixations vs recall; 70-80% with ML (CUE_CATALOG.md)."
+        ),
+    },
+    "visual.pupil_dilation": {
+        "effect_size_d": 0.40, "reliability_tier": 2,
+        "family": "visual", "region": "eyes",
+        "citation": (
+            "Catalog cue 7/55 — pupil/iris dilation, cognitive-load spike; 65-75% alone."
+            " Reliable only at 720p+, so quality is scaled down at low webcam resolution."
+        ),
+    },
+    "visual.asymmetric_smile": {
+        "effect_size_d": 0.35, "reliability_tier": 2,
+        "family": "visual", "region": "mouth",
+        "citation": (
+            "Catalog cue 5 — smile asymmetry (Duchenne vs fake), AU6/AU12 left-right"
+            " asymmetry (CUE_CATALOG.md)."
+        ),
+    },
+    "visual.nose_wrinkle": {
+        "effect_size_d": 0.28, "reliability_tier": 3,
+        "family": "visual", "region": "mouth",
+        "citation": (
+            "Catalog cue 4 — nose wrinkle (AU9), disgust/discomfort; weak-moderate."
+        ),
+    },
+    "visual.eye_blocking": {
+        "effect_size_d": 0.28, "reliability_tier": 3,
+        "family": "visual", "region": "eyes",
+        "citation": (
+            "Catalog cue 13 — eye blocking (prolonged eye closure while speaking),"
+            " blink-duration classifier; weak-moderate."
+        ),
+    },
+    "visual.eye_widen": {
+        "effect_size_d": 0.25, "reliability_tier": 3,
+        "family": "visual", "region": "eyes",
+        "citation": (
+            "Catalog cue 9-adjacent — eye widen (AU5, eyeWide), surprise/fear leakage;"
+            " weak single-cue diagnosticity."
+        ),
+    },
 }
 
 

@@ -47,3 +47,22 @@ def test_linguistic_weights_present_with_citations():
 def test_gaze_is_strongest_visual_cue():
     # cue 58 (gaze aversion duration) d~0.6-0.8 should outrank brow/lip/jaw proxies
     assert CUE_WEIGHTS["visual.gaze_aversion"]["effect_size_d"] >= CUE_WEIGHTS["visual.brow_flash"]["effect_size_d"]
+
+
+def test_new_facial_cue_weights_present():
+    from blitz_overlay.weights import CUE_WEIGHTS
+    expected = {
+        "visual.gaze_fixation": (0.50, 2, "eyes"),
+        "visual.pupil_dilation": (0.40, 2, "eyes"),
+        "visual.asymmetric_smile": (0.35, 2, "mouth"),
+        "visual.nose_wrinkle": (0.28, 3, "mouth"),
+        "visual.eye_blocking": (0.28, 3, "eyes"),
+        "visual.eye_widen": (0.25, 3, "eyes"),
+    }
+    for cue_id, (d, tier, region) in expected.items():
+        spec = CUE_WEIGHTS[cue_id]
+        assert spec["family"] == "visual"
+        assert spec["region"] == region
+        assert abs(spec["effect_size_d"] - d) < 1e-9
+        assert spec["reliability_tier"] == tier
+        assert spec["citation"]
