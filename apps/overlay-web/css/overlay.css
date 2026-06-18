@@ -153,6 +153,34 @@ header {
   box-shadow: 0 0 18px rgba(91, 141, 239, 0.12), 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
+/* ─── Active calibration card (overlays the video) ─── */
+.calib {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(86%, 360px);
+  padding: 16px 18px;
+  background: rgba(11, 15, 20, 0.86);
+  border: 1px solid #2a3645;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-family: monospace;
+}
+.calib-head { font-size: 13px; font-weight: 700; letter-spacing: .1em; color: #5b8def; display: flex; justify-content: space-between; }
+.calib-barwrap { height: 6px; background: #1f2733; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+.calib-bar { height: 100%; width: 0%; background: #5b8def; transition: width .2s ease; }
+.calib-guidance { font-size: 11px; color: #ffd479; margin-bottom: 10px; min-height: 14px; }
+.calib-channels { list-style: none; margin: 0; padding: 0; }
+.calib-ch { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; color: #6b7889; }
+.calib-icon { width: 14px; text-align: center; }
+.calib-label { width: 84px; flex-shrink: 0; }
+.calib-count { width: 40px; text-align: right; }
+.calib-hint { flex: 1; font-size: 10px; opacity: .85; }
+.calib-ch.ready { color: #28c76f; }
+.calib-ch.waiting { color: #ff9f43; }
+.calib-ch.idle { color: #6b7889; }
+
 /* ─── Parallel Cue Verifier ─── */
 .verifier { padding: 8px 14px 14px; border-top: 1px solid #1f2733; }
 .verdict { font-weight: 700; font-size: 15px; margin-bottom: 4px; }

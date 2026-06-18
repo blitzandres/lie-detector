@@ -9,6 +9,7 @@ import { Enneagram } from "./enneagram.js";
 import { CueVerifier } from "./cue-verifier.js";
 import { BellPlayer } from "./bell.js";
 import { CueTimeline } from "./cue-timeline.js";
+import { Calibration } from "./calibration.js";
 
 const video = document.getElementById("cam");
 const canvas = document.getElementById("overlay");
@@ -46,6 +47,7 @@ const cueVerifier = new CueVerifier({
 });
 const bellPlayer = new BellPlayer();
 const cueTimeline = new CueTimeline(document.getElementById("cue-timeline"));
+const calibration = new Calibration(document.getElementById("calibration"));
 const trustEl = document.getElementById("trust");
 let _sensitivity = 0;
 document.getElementById("sens").addEventListener("input", (e) => {
@@ -58,6 +60,7 @@ const ws = new WsClient(wsUrl, (c) => {
   enneagram.setConsensus(c);
   cueVerifier.setConsensus(c);
   cueTimeline.push(c);
+  calibration.setConsensus(c);
   bellPlayer.handle(c.bell);
   trustEl.textContent =
     `trust: ${Math.round(bellPlayer.trust() * 100)}% · bells/min: ${bellPlayer.bellCount()}`;
