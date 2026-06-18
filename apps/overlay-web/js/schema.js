@@ -8,4 +8,8 @@ export const USED_BLENDSHAPES = [
   "eyeLookInRight", "eyeLookOutRight", "eyeLookUpRight", "eyeLookDownRight",
   "browInnerUp", "browDownLeft", "browDownRight",
   "mouthPressLeft", "mouthPressRight", "mouthPucker",
+  // facial empowerment (catalog #4/#5/+): nose wrinkle, smile asymmetry, cheek raise
+  "noseSneerLeft", "noseSneerRight",
+  "mouthSmileLeft", "mouthSmileRight",
+  "cheekSquintLeft", "cheekSquintRight",
 ];

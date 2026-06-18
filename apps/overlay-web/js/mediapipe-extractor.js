@@ -69,6 +69,26 @@ export class MediaPipeExtractor {
              - ((bs.eyeLookInLeft || 0) + (bs.eyeLookOutRight || 0));
     const gy = ((bs.eyeLookUpLeft || 0) + (bs.eyeLookUpRight || 0))
              - ((bs.eyeLookDownLeft || 0) + (bs.eyeLookDownRight || 0));
-    return { jaw_width_ratio: jawWidthRatio, gaze_x: gx / 2, gaze_y: gy / 2 };
+    return {
+      jaw_width_ratio: jawWidthRatio,
+      gaze_x: gx / 2,
+      gaze_y: gy / 2,
+      iris_ratio: this._irisRatio(lm),   // pupil-dilation proxy (null if iris landmarks absent)
+    };
+  }
+
+  /**
+   * Iris diameter ÷ eye width, averaged over both eyes — a pupil-dilation proxy.
+   * Needs the 478-landmark (iris-refined) FaceLandmarker output (indices 468-477).
+   * Returns null when iris landmarks are unavailable so the cue simply abstains.
+   */
+  _irisRatio(lm) {
+    if (!lm || lm.length < 478) return null;
+    const ringMean = (c, ring) => ring.reduce((s, i) => s + this._dist(lm[c], lm[i]), 0) / ring.length;
+    const lIris = ringMean(468, [469, 470, 471, 472]) * 2;
+    const rIris = ringMean(473, [474, 475, 476, 477]) * 2;
+    const lEye = this._dist(lm[33], lm[133]) || 1e-6;   // left eye outer→inner corner
+    const rEye = this._dist(lm[362], lm[263]) || 1e-6;  // right eye inner→outer corner
+    return ((lIris / lEye) + (rIris / rEye)) / 2;
   }
 }
