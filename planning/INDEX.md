@@ -3,27 +3,40 @@
 
 ---
 
-## 🚦 START HERE — current focus (updated June 16, 2026)
+## 🚦 START HERE — current focus (updated June 17, 2026)
 
 **What this is:** the **Live Consensus Overlay** ("AI-vision") — a real-time, sports-analysis-style
 overlay where MediaPipe maps the face/body, the Python engine detects deception **cues** and aggregates
 them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the browser draws a telestrator
 + consensus panel on top of the video. Raw video never leaves the device. Run it: `blitz-overlay`.
 
-**STATUS (updated June 16, 2026):**
+**STATUS (updated June 17, 2026):**
 - ✅ **DONE & on `main` (GitHub):** Stage 1 walking skeleton (Visual + Physio families, 5 visual cues +
   rPPG, rolling baseline, family fusion + two-gate, consensus, prediction log, FastAPI one-command server,
   browser telestrator). Plus the **enneagram viz**, **right-hand dashboard layout**, and **live family
-  activity bars** (online + activity per family). 80 tests, ruff+pytest CI.
-- 🔄 **Built, on branch `feat/audio-linguistic` (NOT pushed — awaiting user mic test):** the **Audio family**
-  (browser Web Audio: pitch/pause/tremor → `blitz_overlay/cues/audio.py`, wired voter + enneagram slot 6).
-- ⏭️ **NEXT, in priority order** (details in the dev memory `project_blitz_overlay.md`): (1) **Linguistic family**
-  (live transcript via Web Speech API → reuse `modalities/linguistic/analyzer.py` lexicon cues → `cues/linguistic.py`);
-  (2) **Cross-modal coherence meta-cue** (audio×movement sync = channel discrepancy / speech-gesture mismatch —
-  WebSearch the literature first, then a low-weight cross-family modifier); (3) **"Bell" alarm + trust log**
-  (earned bell only on a sustained all-families two-gate FLAG; bell frequency over time = inverse trust meter);
-  (4) **Body/Posture as a 5th family** (MediaPipe Pose: postural shifts, self-adaptors, shrug, reduced gestures — low weight).
-- The 4 consensus voters are **Visual · Audio · Linguistic · Physio** (Audio now live; Body would make 5).
+  activity bars**. 80 tests.
+- 🔄 **Built, on branch `feat/audio-linguistic` (committed + pushed as a BRANCH; NOT merged to `main` —
+  awaiting user's in-browser confirmation of audio + linguistic + verifier):**
+  - **Audio family** (browser Web Audio: pitch/pause/tremor → `cues/audio.py`, voter + enneagram slot 6).
+  - **Linguistic family** (4th voter): browser **Web Speech** transcript → `cues/linguistic.py` reusing
+    `modalities/linguistic/analyzer.py` lexicons (7 cues), per-utterance seq de-dup, live caption strip +
+    honest cloud-STT notice. Spec/plan: `docs/superpowers/{specs,plans}/2026-06-16-linguistic-family*`.
+  - **Parallel Cue Verifier + synchrony Bell** (engine UNTOUCHED — pure aggregation layer):
+    `blitz_overlay/synchrony.py` (co-firing burst: ≥K lit cues across ≥2 families in a ~1s window) +
+    `blitz_overlay/bell.py` (earned debounced bell on burst + posterior≥risk_floor held ~1.5s, honest
+    label "strong deception-pattern convergence") + `cue_rows`/`convergence`/`bell` payload. Browser:
+    live **cue checklist**, **Cue Mixer** scrolling multi-track timeline (`cue-timeline.js`, synchrony =
+    vertical co-firing column), WebAudio chime, **trust meter**, **sensitivity slider** (moves operating
+    point K/lit_z/risk_floor only — never science weights). Spec/plan: `…/2026-06-16-parallel-cue-verifier*`.
+  - **114 tests, ruff+pytest green.** 16 cues live: 5 visual · 3 audio · 7 linguistic · 1 physio.
+- ⏭️ **NEXT, in priority order:** (1) **Facial cue empowerment** (PROPOSED, awaiting user confirm) — add
+  6 MediaPipe-feasible visual cues: gaze fixation (#56), pupil/iris dilation (#7/#55), eye blocking (#13),
+  eye widen, nose wrinkle (#4), asymmetric smile (#5) → Visual 5→11; needs browser iris radius + unused
+  blendshapes (`eyeWide/noseSneer/mouthSmile/cheekSquint`) + detectors in `cues/visual.py` + weights + TDD.
+  (2) **Cross-modal coherence meta-cue** (audio×movement sync — WebSearch first, low-weight modifier).
+  (3) **Body/Posture 5th family** (MediaPipe Pose — low weight; heavier). Deeper audio (Parselmouth
+  jitter/shimmer/HNR/VOT) + thermal need heavy models that fight the M1/8 GB low-memory constraint — deferred.
+- Consensus voters: **Visual · Audio · Linguistic · Physio** (all 4 live on the branch; Body would make 5).
 
 **ENVIRONMENT / where + how it operates (so we never redo this):**
 - Machine: **macOS (darwin), shell zsh, Apple M1 / 8 GB RAM** — everything runs **locally**.
