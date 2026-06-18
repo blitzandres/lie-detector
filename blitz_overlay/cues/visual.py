@@ -108,4 +108,123 @@ class JawTension(CueDetector):
         return None if ratio is None else float(ratio)
 
 
-VISUAL_DETECTORS = [BlinkRate, GazeAversion, BrowFlash, LipPress, JawTension]
+EYE_CLOSED_THRESHOLD = 0.5       # eyeBlink coefficient above this = eye held closed
+GAZE_FIX_WINDOW_MS = 1500        # window for gaze darting velocity
+
+
+class GazeFixation(CueDetector):
+    """Gaze darting velocity — fabrication = more frequent, shorter fixations (catalog cue 56).
+
+    Mean per-sample gaze movement over a ~1.5 s window. High = darting (suspicious); low =
+    steady fixation. Distinct from gaze_aversion, which measures sustained off-centre duration.
+    """
+
+    cue_id = "visual.gaze_fixation"
+    direction = 1
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._hist: deque[tuple[int, float, float]] = deque()
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        g = frame.geometry
+        gx, gy = g.get("gaze_x"), g.get("gaze_y")
+        if gx is None and gy is None:
+            return None
+        now = frame.ts
+        self._hist.append((now, float(gx or 0.0), float(gy or 0.0)))
+        while self._hist and self._hist[0][0] < now - GAZE_FIX_WINDOW_MS:
+            self._hist.popleft()
+        if len(self._hist) < 2:
+            return 0.0
+        steps = 0.0
+        for (_, x0, y0), (_, x1, y1) in zip(self._hist, list(self._hist)[1:], strict=False):
+            steps += ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+        return steps / (len(self._hist) - 1)
+
+
+class PupilDilation(CueDetector):
+    """Pupil/iris dilation proxy — cognitive-load spike (catalog cue 7/55).
+
+    Reads geometry.iris_ratio (iris diameter ÷ eye width). Quality is scaled down because
+    the catalog notes this is only reliable at 720p+.
+    """
+
+    cue_id = "visual.pupil_dilation"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        val = frame.geometry.get("iris_ratio")
+        return None if val is None else float(val)
+
+    def quality(self, frame: FeatureFrame) -> float:
+        return 0.5 * max(0.0, min(1.0, frame.confidence))
+
+
+class EyeBlocking(CueDetector):
+    """Eye blocking — prolonged eye closure *duration* while speaking (catalog cue 13)."""
+
+    cue_id = "visual.eye_blocking"
+    direction = 1
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._closed_since: int | None = None
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if "eyeBlinkLeft" not in bs and "eyeBlinkRight" not in bs:
+            return None
+        closed = max(bs.get("eyeBlinkLeft", 0.0), bs.get("eyeBlinkRight", 0.0)) >= EYE_CLOSED_THRESHOLD
+        now = frame.ts
+        if closed:
+            if self._closed_since is None:
+                self._closed_since = now
+            return (now - self._closed_since) / 1000.0
+        self._closed_since = None
+        return 0.0
+
+
+class EyeWiden(CueDetector):
+    """Eye widen (AU5, eyeWide) — surprise/fear leakage (catalog cue 9-adjacent)."""
+
+    cue_id = "visual.eye_widen"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if "eyeWideLeft" not in bs and "eyeWideRight" not in bs:
+            return None
+        return max(bs.get("eyeWideLeft", 0.0), bs.get("eyeWideRight", 0.0))
+
+
+class NoseWrinkle(CueDetector):
+    """Nose wrinkle (AU9, noseSneer) — disgust/discomfort (catalog cue 4)."""
+
+    cue_id = "visual.nose_wrinkle"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if "noseSneerLeft" not in bs and "noseSneerRight" not in bs:
+            return None
+        return max(bs.get("noseSneerLeft", 0.0), bs.get("noseSneerRight", 0.0))
+
+
+class AsymmetricSmile(CueDetector):
+    """Smile asymmetry (AU6/AU12 left-right) — fake vs Duchenne (catalog cue 5)."""
+
+    cue_id = "visual.asymmetric_smile"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if "mouthSmileLeft" not in bs and "mouthSmileRight" not in bs:
+            return None
+        return abs(bs.get("mouthSmileLeft", 0.0) - bs.get("mouthSmileRight", 0.0))
+
+
+VISUAL_DETECTORS = [
+    BlinkRate, GazeAversion, BrowFlash, LipPress, JawTension,
+    GazeFixation, PupilDilation, EyeBlocking, EyeWiden, NoseWrinkle, AsymmetricSmile,
+]
