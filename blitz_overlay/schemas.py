@@ -138,6 +138,7 @@ class Consensus:
     cue_rows: list[CueRow] = field(default_factory=list)
     convergence: dict = field(default_factory=dict)
     bell: dict = field(default_factory=dict)
+    calibration: dict = field(default_factory=dict)
     message: str = ""      # degradation/status message (spec §8)
 
     def to_dict(self) -> dict:
@@ -154,5 +155,6 @@ class Consensus:
             "cue_rows": [r.to_dict() for r in self.cue_rows],
             "convergence": self.convergence,
             "bell": self.bell,
+            "calibration": self.calibration,
             "message": self.message,
         }

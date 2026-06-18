@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from blitz_overlay.bell import BellController, map_sensitivity
+from blitz_overlay.calibration_status import compute_calibration
 from blitz_overlay.consensus import ConsensusBuilder
 from blitz_overlay.cues.audio import AUDIO_DETECTORS
 from blitz_overlay.cues.linguistic import LINGUISTIC_DETECTORS
@@ -39,6 +40,20 @@ class OverlaySession:
         self._last_transcript_seq: int | None = None
         self.synchrony = SynchronyDetector()
         self.bell = BellController()
+        # Active-calibration (hard gate): completes only when every producing cue has a base.
+        self._det_meta = [(d.cue_id, d.family, d.cue_id.split(".")[-1]) for d in self.detectors]
+        self._calib_target = baseline_seconds
+        self._calib_timeout = baseline_seconds + 60   # safety escape so a dead channel can't strand us
+        self._calibrated = False
+
+    def _calibration(self) -> tuple[bool, dict]:
+        obs = {cid: self.baseline.observation_count(cid) for cid, _, _ in self._det_meta}
+        calibrating, calib = compute_calibration(
+            self._det_meta, obs, self.baseline.elapsed_seconds, self._calib_target,
+            timeout_s=self._calib_timeout, already_calibrated=self._calibrated)
+        if not calibrating:
+            self._calibrated = True
+        return calibrating, calib
 
     def _apply_sensitivity(self, frame: FeatureFrame) -> None:
         if not frame.config:
@@ -81,11 +96,14 @@ class OverlaySession:
         if not frame.face_present:
             convergence = self.synchrony.update(frame.ts, [])
             bell = self.bell.update(frame.ts, convergence, 0.0)
+            calibrating, calibration = self._calibration()
+            if calibrating:
+                calibration["guidance"] = "No face detected — look at the camera to calibrate."
             out = self.consensus.build(
-                cues=[], calibrating=self.baseline.is_calibrating, ts=frame.ts,
+                cues=[], calibrating=calibrating, ts=frame.ts,
                 regions=self.regions, message="No subject detected — cues paused.",
                 cue_rows=self._build_cue_rows({}, set()),
-                convergence=convergence, bell=bell)
+                convergence=convergence, bell=bell, calibration=calibration)
             self._last_consensus = out
             self.logger.log(out, baseline_mode=self.baseline.mode)
             return out
@@ -120,17 +138,19 @@ class OverlaySession:
             if event is not None:
                 cues.append(event)
 
+        calibrating, calibration = self._calibration()
+
         cue_levels = [(cid, self._family_of_cue(cid), z) for cid, z in directed_z.items()]
         convergence = self.synchrony.update(frame.ts, cue_levels)
-        posterior = 0.0 if self.baseline.is_calibrating else fuse_by_family(cues)["posterior"]
+        posterior = 0.0 if calibrating else fuse_by_family(cues)["posterior"]
         bell = self.bell.update(frame.ts, convergence, posterior)
         cue_rows = self._build_cue_rows(directed_z, set(measurements.keys()))
 
         out = self.consensus.build(
-            cues=cues, calibrating=self.baseline.is_calibrating, ts=frame.ts,
+            cues=cues, calibrating=calibrating, ts=frame.ts,
             regions=self.regions,
             online_families=online_families, family_activity=family_activity,
-            cue_rows=cue_rows, convergence=convergence, bell=bell)
+            cue_rows=cue_rows, convergence=convergence, bell=bell, calibration=calibration)
         self._last_consensus = out
         self.logger.log(out, baseline_mode=self.baseline.mode)
         return out
