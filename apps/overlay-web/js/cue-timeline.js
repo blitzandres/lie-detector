@@ -16,7 +16,8 @@ const FAMILY_COLORS = {
   visual: "#5b8def", audio: "#28c76f", linguistic: "#ff9f43", physio: "#ea5455",
 };
 const WINDOW_MS = 12000;   // visible time span
-const GUTTER = 92;         // left label column
+const GUTTER = 118;        // left label column
+const FAM_TAG = { visual: "VIS", audio: "AUD", linguistic: "LNG", physio: "PHY" };
 
 export class CueTimeline {
   constructor(canvas) {
@@ -95,23 +96,44 @@ export class CueTimeline {
     const top = 4;
     const laneH = (H - top - 2) / n;
 
-    // Lane backgrounds + channel/cue labels
+    // Lane backgrounds + channel/cue labels (clean gutter: color band · 3-letter tag · clipped name)
+    const fs = Math.max(7, Math.min(10, Math.floor(laneH - 2)));
+    ctx.textBaseline = "middle";
     let lastFam = null;
     for (let i = 0; i < n; i++) {
       const y = top + i * laneH;
+      const yc = y + laneH / 2;
       const lane = lanes[i];
+      const famColor = FAMILY_COLORS[lane.family] || "#888";
+
+      // lane background (zebra) + family color band on the far left
       ctx.fillStyle = (i % 2) ? "#0e141b" : "#11161d";
       ctx.fillRect(GUTTER, y, W - GUTTER, laneH);
+      ctx.fillStyle = famColor;
+      ctx.fillRect(0, y, 3, laneH);
+
+      // group separator + 3-letter channel tag at each family's first lane
       if (lane.family !== lastFam) {
-        ctx.fillStyle = FAMILY_COLORS[lane.family] || "#888";
-        ctx.font = "bold 9px monospace";
-        ctx.fillText(lane.family.toUpperCase(), 4, y + Math.min(laneH, 10));
+        if (i > 0) {
+          ctx.strokeStyle = "#1f2733";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(W, y);
+          ctx.stroke();
+        }
+        ctx.font = `bold ${fs}px monospace`;
+        ctx.fillStyle = famColor;
+        ctx.fillText(FAM_TAG[lane.family] || lane.family.slice(0, 3).toUpperCase(), 8, yc);
         lastFam = lane.family;
       }
-      ctx.fillStyle = "#6b7889";
-      ctx.font = "9px monospace";
-      ctx.fillText(lane.label.slice(0, 13), 44, y + Math.min(laneH, 10));
+
+      // cue name, clipped so it never bleeds past the gutter into the note area
+      ctx.font = `${fs}px monospace`;
+      ctx.fillStyle = "#8595a8";
+      this._fillClipped(ctx, lane.label, 36, yc, GUTTER - 40);
     }
+    ctx.textBaseline = "alphabetic";
 
     // Per-frame column width (≈ one consensus tick)
     const colW = Math.max(2, (W - GUTTER) / (WINDOW_MS / 100));
@@ -149,6 +171,13 @@ export class CueTimeline {
     ctx.fillStyle = this._statusColor;
     ctx.font = "8px monospace";
     ctx.fillText("NOW", W - 26, 9);
+  }
+
+  _fillClipped(ctx, text, x, y, maxW) {
+    if (ctx.measureText(text).width <= maxW) { ctx.fillText(text, x, y); return; }
+    let t = text;
+    while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
+    ctx.fillText(t + "…", x, y);
   }
 
   _alpha(hex, a) {
