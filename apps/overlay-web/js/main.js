@@ -10,6 +10,7 @@ import { CueVerifier } from "./cue-verifier.js";
 import { BellPlayer } from "./bell.js";
 import { CueTimeline } from "./cue-timeline.js";
 import { Calibration } from "./calibration.js";
+import { QaPanel } from "./qa-panel.js";
 
 const video = document.getElementById("cam");
 const canvas = document.getElementById("overlay");
@@ -55,7 +56,9 @@ document.getElementById("sens").addEventListener("input", (e) => {
 });
 
 const wsUrl = `ws://${location.host}/ws`;
+let qaPanel;
 const ws = new WsClient(wsUrl, (c) => {
+  if (c.type === "turn_result") { qaPanel.showResult(c); return; }
   renderer.setConsensus(c);
   enneagram.setConsensus(c);
   cueVerifier.setConsensus(c);
@@ -66,6 +69,17 @@ const ws = new WsClient(wsUrl, (c) => {
     `trust: ${Math.round(bellPlayer.trust() * 100)}% · bells/min: ${bellPlayer.bellCount()}`;
 },
   (s) => { if (s === "engine-offline") panel.message.textContent = "Engine offline — reconnecting…"; });
+
+qaPanel = new QaPanel({
+  question: document.getElementById("qa-question"),
+  answer: document.getElementById("qa-answer"),
+  start: document.getElementById("qa-start"),
+  judge: document.getElementById("qa-judge"),
+  fillRead: document.getElementById("qa-fill-read"),
+  fillTrue: document.getElementById("qa-fill-true"),
+  fillFalse: document.getElementById("qa-fill-false"),
+  verdict: document.getElementById("qa-verdict"),
+}, ws, () => (transcriber.available ? transcriber.latest().text : ""), () => Math.round(performance.now()));
 
 panel.toggle.addEventListener("click", () => panel.body.classList.toggle("collapsed"));
 

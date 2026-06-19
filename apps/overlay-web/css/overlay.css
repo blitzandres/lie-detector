@@ -30,6 +30,16 @@ header {
   flex-wrap: wrap;              /* graceful stack on narrow windows */
 }
 
+/* ─── Content engine Q&A panel ─── */
+.qa { padding: 10px 14px 14px; border-top: 1px solid #1f2733; }
+.qa-title { font: 10px/1.4 monospace; letter-spacing: .1em; text-transform: uppercase; color: #7d8da3; margin-bottom: 6px; }
+.qa-question, .qa-answer { width: 100%; background: #0b0f14; color: #e6edf3; border: 1px solid #2a3645; border-radius: 6px; padding: 6px 8px; font: 12px/1.4 monospace; margin-bottom: 6px; }
+.qa-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.qa-buttons button { background: #11161d; color: #9fb0c3; border: 1px solid #2a3645; border-radius: 6px; padding: 4px 10px; cursor: pointer; font: 11px monospace; }
+.qa-verdict { font: 12px/1.5 monospace; color: #e6edf3; min-height: 16px; }
+.qa-scores { color: #9fb0c3; font-size: 11px; }
+.qa-flagged { color: #ff9f43; font-size: 11px; }
+
 /* ─── Cue Mixer timeline (full-width bottom strip) ─── */
 .timeline-wrap { flex-shrink: 0; padding: 4px 12px 10px; max-height: 300px; overflow-y: auto; }
 .timeline-title {
