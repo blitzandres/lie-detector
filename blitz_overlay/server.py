@@ -6,6 +6,7 @@ Raw video never reaches here — only feature frames (spec §3).
 from __future__ import annotations
 
 import asyncio
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -13,9 +14,18 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from blitz_overlay.config import OverlayConfig
+from blitz_overlay.content.ollama_judge import OllamaContentJudge
 from blitz_overlay.pipeline import OverlaySession
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "apps" / "overlay-web"
+
+
+def _make_content_judge():
+    """Real Ollama judge only when BLITZ_OVERLAY_CONTENT=ollama; otherwise None → the session's
+    deterministic StubContentJudge (so the test suite never hits a live LLM)."""
+    if os.getenv("BLITZ_OVERLAY_CONTENT", "").lower() == "ollama":
+        return OllamaContentJudge(model=os.getenv("BLITZ_OVERLAY_OLLAMA_MODEL", "llama3.2:3b"))
+    return None
 
 
 def create_app(config: OverlayConfig | None = None) -> FastAPI:
@@ -33,6 +43,7 @@ def create_app(config: OverlayConfig | None = None) -> FastAPI:
             gate_threshold=config.gate,
             baseline_seconds=config.baseline_seconds,
             log_dir=config.log_dir,
+            content_judge=_make_content_judge(),
         )
         try:
             while True:
