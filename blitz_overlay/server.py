@@ -5,6 +5,7 @@ Raw video never reaches here — only feature frames (spec §3).
 """
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -36,6 +37,15 @@ def create_app(config: OverlayConfig | None = None) -> FastAPI:
         try:
             while True:
                 raw = await websocket.receive_json()
+                if raw.get("type") == "turn":
+                    result = await asyncio.to_thread(
+                        session.judge_turn,
+                        raw.get("question", ""), raw.get("answer", ""),
+                        int(raw.get("t0", 0)), int(raw.get("t1", 0)),
+                    )
+                    result["type"] = "turn_result"
+                    await websocket.send_json(result)
+                    continue
                 consensus = session.process(raw)
                 if session.should_emit(consensus.ts):
                     await websocket.send_json(consensus.to_dict())
