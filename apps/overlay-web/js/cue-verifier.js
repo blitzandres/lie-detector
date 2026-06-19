@@ -56,7 +56,7 @@ export class CueVerifier {
     fam.title = row.family;
     const name = document.createElement("span");
     name.className = "cue-name";
-    name.textContent = row.label;
+    name.textContent = row.cue_id === "physio.heart_rate" ? "rPPG·cam" : row.label;
     const barWrap = document.createElement("span");
     barWrap.className = "cue-bar-wrap";
     const bar = document.createElement("span");

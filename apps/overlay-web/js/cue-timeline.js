@@ -18,6 +18,8 @@ const FAMILY_COLORS = {
 const WINDOW_MS = 12000;   // visible time span
 const GUTTER = 118;        // left label column
 const FAM_TAG = { visual: "VIS", audio: "AUD", linguistic: "LNG", physio: "PHY" };
+// Honest display labels (e.g. heart rate is a webcam rPPG estimate, not a contact sensor).
+const LABEL_OVERRIDE = { "physio.heart_rate": "rPPG·cam" };
 
 export class CueTimeline {
   constructor(canvas) {
@@ -58,7 +60,7 @@ export class CueTimeline {
     const lanes = [];
     const fams = [...FAMILY_ORDER, ...Object.keys(byFam).filter((f) => !FAMILY_ORDER.includes(f))];
     for (const fam of fams) {
-      for (const r of (byFam[fam] || [])) lanes.push({ cue_id: r.cue_id, family: fam, label: r.label });
+      for (const r of (byFam[fam] || [])) lanes.push({ cue_id: r.cue_id, family: fam, label: LABEL_OVERRIDE[r.cue_id] || r.label });
     }
     this._lanes = lanes;
     this._laneIndex = {};
@@ -71,13 +73,18 @@ export class CueTimeline {
   }
 
   _draw() {
+    // Fixed comfortable lane height so lanes never crush/overlap; the strip scrolls if there
+    // are many cues (the wrapper has overflow-y:auto).
+    const LANE_PX = 14;
+    const top = 4;
+    const n = (this._lanes && this._lanes.length) ? this._lanes.length : 1;
     const cssW = this.canvas.clientWidth || 800;
-    const cssH = this.canvas.clientHeight || 190;
+    const targetH = n * LANE_PX + top + 4;
     if (this.canvas.width !== cssW) this.canvas.width = cssW;
-    if (this.canvas.height !== cssH) this.canvas.height = cssH;
+    if (this.canvas.height !== targetH) this.canvas.height = targetH;
     const ctx = this.ctx;
     const W = cssW;
-    const H = cssH;
+    const H = targetH;
 
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = "#0b0f14";
@@ -92,12 +99,10 @@ export class CueTimeline {
 
     const now = Date.now();
     const lanes = this._lanes;
-    const n = lanes.length;
-    const top = 4;
-    const laneH = (H - top - 2) / n;
+    const laneH = LANE_PX;
 
     // Lane backgrounds + channel/cue labels (clean gutter: color band · 3-letter tag · clipped name)
-    const fs = Math.max(7, Math.min(10, Math.floor(laneH - 2)));
+    const fs = Math.max(8, Math.min(10, Math.floor(laneH - 4)));
     ctx.textBaseline = "middle";
     let lastFam = null;
     for (let i = 0; i < n; i++) {

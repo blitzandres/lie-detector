@@ -11,7 +11,7 @@ const HINTS = {
   visual: "look at the camera",
   audio: "speak to calibrate",
   linguistic: "keep talking",
-  physio: "hold still · face the light",
+  physio: "rPPG (camera, not a sensor) — hold still, good light; may not lock",
 };
 
 export class Calibration {
