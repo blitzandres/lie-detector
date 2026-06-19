@@ -10,7 +10,20 @@ overlay where MediaPipe maps the face/body, the Python engine detects deception 
 them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the browser draws a telestrator
 + consensus panel on top of the video. Raw video never leaves the device. Run it: `blitz-overlay`.
 
-**STATUS (updated June 17, 2026):**
+**⭐ STRATEGIC PIVOT (June 19, 2026) — CONTENT-FIRST, Q&A:** the *meaning of speech* is now the
+**primary** layer; behavioral cues become the **secondary, time-aligned confirmation**. A local LLM
+(**Ollama**, behind a swappable `ContentJudge` seam) reads each **answer in a Q&A interview** and
+scores **content-pattern** deception markers (consistency · Reality-Monitoring richness · verifiability
+· evasion) — NOT factual truth-checking (locked honest boundary; still never "LIE"). Two engines run in
+parallel, loosely coupled: the fast **cue engine** keeps the real-time rhythm + a timestamped timeline;
+the slow **content engine** judges each answer then *pulls the cue activity for that answer's time
+window* and fuses (content-primary, cue-confirm). Plus a **calibration reading phase** + **True/False
+dev scripts**. Full design: `docs/superpowers/specs/2026-06-19-content-first-qa-architecture-design.md`.
+Ollama is NOT yet installed (8 GB → small model `llama3.2:3b`/`qwen2.5:3b` Q4; content layer degrades
+gracefully to the cue engine when Ollama is down). **Body family (torso/hands/neck) = Phase 2** after
+the content engine.
+
+**STATUS (updated June 19, 2026):**
 - ✅ **DONE & on `main` (GitHub):** Stage 1 walking skeleton (Visual + Physio families, 5 visual cues +
   rPPG, rolling baseline, family fusion + two-gate, consensus, prediction log, FastAPI one-command server,
   browser telestrator). Plus the **enneagram viz**, **right-hand dashboard layout**, and **live family
@@ -28,14 +41,21 @@ them via a live **consensus mechanism** (Bayesian fusion + two-gate), and the br
     live **cue checklist**, **Cue Mixer** scrolling multi-track timeline (`cue-timeline.js`, synchrony =
     vertical co-firing column), WebAudio chime, **trust meter**, **sensitivity slider** (moves operating
     point K/lit_z/risk_floor only — never science weights). Spec/plan: `…/2026-06-16-parallel-cue-verifier*`.
-  - **114 tests, ruff+pytest green.** 16 cues live: 5 visual · 3 audio · 7 linguistic · 1 physio.
-- ⏭️ **NEXT, in priority order:** (1) **Facial cue empowerment** (PROPOSED, awaiting user confirm) — add
-  6 MediaPipe-feasible visual cues: gaze fixation (#56), pupil/iris dilation (#7/#55), eye blocking (#13),
-  eye widen, nose wrinkle (#4), asymmetric smile (#5) → Visual 5→11; needs browser iris radius + unused
-  blendshapes (`eyeWide/noseSneer/mouthSmile/cheekSquint`) + detectors in `cues/visual.py` + weights + TDD.
-  (2) **Cross-modal coherence meta-cue** (audio×movement sync — WebSearch first, low-weight modifier).
-  (3) **Body/Posture 5th family** (MediaPipe Pose — low weight; heavier). Deeper audio (Parselmouth
-  jitter/shimmer/HNR/VOT) + thermal need heavy models that fight the M1/8 GB low-memory constraint — deferred.
+  - **Facial cue empowerment** (BUILT): +6 MediaPipe cues (gaze_fixation #56, pupil_dilation #7/#55,
+    eye_blocking #13, eye_widen, nose_wrinkle #4, asymmetric_smile #5) via browser iris radius + unused
+    blendshapes → **Visual 5→11**. Plan `…/2026-06-17-facial-cue-empowerment.md`.
+  - **Hard-gated active calibration** (BUILT, option 2): `calibration_status.py` — calibration won't
+    complete until every *producing* cue has a base (≥8 samples); zero-signal cues don't block; max-timeout
+    escape. Browser calibration card with per-channel checklist + guidance.
+  - **rPPG honesty fix** (BUILT): `estimate_bpm` now **abstains unless a real pulse dominates** (peak-SNR
+    gate) instead of reporting noise as a heart rate; UI relabeled **rPPG·cam** (camera estimate, not a
+    sensor). Cue Mixer lanes fixed-height + scroll (no overlap).
+  - **132 tests, ruff+pytest green.** 22 cues live: 11 visual · 3 audio · 7 linguistic · 1 physio.
+- ⏭️ **NEXT, in priority order:** (1) ⭐ **Content engine (CONTENT-FIRST Q&A)** — the strategic pivot above;
+  build the Ollama `ContentJudge` + Q&A turns + time-aligned content-primary fusion + calibration reading +
+  True/False dev scripts (spec `…/2026-06-19-content-first-qa-architecture-design.md`). (2) **Body family**
+  (torso/hands/neck via MediaPipe Pose/Holistic) for the cue-engine rhythm — low weight. (3) Cross-modal
+  coherence meta-cue. Deeper audio (Parselmouth) + thermal stay deferred (fight the M1/8 GB constraint).
 - Consensus voters: **Visual · Audio · Linguistic · Physio** (all 4 live on the branch; Body would make 5).
 
 **ENVIRONMENT / where + how it operates (so we never redo this):**
