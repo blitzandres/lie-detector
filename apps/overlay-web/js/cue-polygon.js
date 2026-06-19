@@ -11,6 +11,7 @@
 const STATUS_COLORS = { CALIBRATING: "#5b8def", CLEAR: "#28c76f", WATCH: "#ff9f43", FLAG: "#ea5455" };
 const FAMILY_ORDER = ["visual", "audio", "linguistic", "physio"];
 const FAMILY_COLORS = { visual: "#5b8def", audio: "#28c76f", linguistic: "#ff9f43", physio: "#ea5455" };
+const FAMILY_ABBR = { visual: "V", audio: "A", linguistic: "L", physio: "P", cbca: "C", body: "B" };
 const SYNC_BRIGHT = 5;   // centre is fully bright at >= this many cues lit together
 const LABEL_MAX = 40;    // show vertex labels only when there are at most this many cues
 
@@ -25,6 +26,32 @@ export class CuePolygon {
     this._centerGlow = 0;
     this._pulse = 0;
     this._running = false;
+    this._verts = [];       // cached vertex screen positions for hover hit-testing
+
+    // hover tooltip (abbreviated vertex labels → full cue id on hover)
+    this._tip = document.createElement("div");
+    this._tip.className = "polygon-tip";
+    this._tip.style.display = "none";
+    (canvas.parentElement || document.body).appendChild(this._tip);
+    canvas.addEventListener("mousemove", (e) => this._onMove(e));
+    canvas.addEventListener("mouseleave", () => { this._tip.style.display = "none"; });
+  }
+
+  _onMove(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    let best = null;
+    let bd = 16;
+    for (const v of this._verts) {
+      const d = Math.hypot(v.x - mx, v.y - my);
+      if (d < bd) { bd = d; best = v; }
+    }
+    if (!best) { this._tip.style.display = "none"; return; }
+    this._tip.textContent = `${best.o.abbr} · ${best.o.cue_id}`;
+    this._tip.style.display = "";
+    this._tip.style.left = `${this.canvas.offsetLeft + mx + 12}px`;
+    this._tip.style.top = `${this.canvas.offsetTop + my + 8}px`;
   }
 
   setConsensus(c) {
@@ -49,7 +76,14 @@ export class CuePolygon {
     for (const r of rows) (byFam[r.family] = byFam[r.family] || []).push(r);
     const fams = [...FAMILY_ORDER, ...Object.keys(byFam).filter((f) => !FAMILY_ORDER.includes(f))];
     const order = [];
-    for (const fam of fams) for (const r of (byFam[fam] || [])) order.push({ cue_id: r.cue_id, family: fam, label: r.label });
+    const famCount = {};
+    for (const fam of fams) {
+      for (const r of (byFam[fam] || [])) {
+        famCount[fam] = (famCount[fam] || 0) + 1;
+        const abbr = (FAMILY_ABBR[fam] || fam[0].toUpperCase()) + famCount[fam];
+        order.push({ cue_id: r.cue_id, family: fam, label: r.label, abbr });
+      }
+    }
     this._order = order;
   }
 
@@ -143,12 +177,14 @@ export class CuePolygon {
       ctx.fill();
     }
 
-    // vertices (+ labels when few enough cues)
+    // vertices (+ compact abbreviations like V1/A2/L3; full id on hover). Cache positions.
+    this._verts = [];
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (let i = 0; i < N; i++) {
       const o = order[i];
       const v = vert(i);
+      this._verts.push({ x: v.x, y: v.y, o });
       const lit = this._lit[o.cue_id] || 0;
       const fam = FAMILY_COLORS[o.family] || "#888";
       ctx.beginPath();
@@ -157,9 +193,9 @@ export class CuePolygon {
       ctx.fill();
       if (N <= LABEL_MAX) {
         const la = ang(i);
-        ctx.font = "7px monospace";
-        ctx.fillStyle = this._a(fam, 0.35 + 0.5 * lit);
-        ctx.fillText(o.label.slice(0, 10), v.x + Math.cos(la) * 11, v.y + Math.sin(la) * 11);
+        ctx.font = "8px monospace";
+        ctx.fillStyle = this._a(fam, 0.4 + 0.5 * lit);
+        ctx.fillText(o.abbr, v.x + Math.cos(la) * 12, v.y + Math.sin(la) * 12);
       }
     }
     ctx.textAlign = "left";
