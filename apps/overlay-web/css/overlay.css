@@ -40,6 +40,11 @@ header {
 .qa-scores { color: #9fb0c3; font-size: 11px; }
 .qa-flagged { color: #ff9f43; font-size: 11px; }
 
+/* ─── Cue Polygon (radial synchrony — replaces the linear mixer) ─── */
+.polygon-wrap { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 4px 12px 10px; }
+.polygon-title { font: 10px/1.4 monospace; letter-spacing: .1em; color: #7d8da3; text-transform: uppercase; margin-bottom: 4px; }
+.polygon-canvas { display: block; height: 300px; aspect-ratio: 1 / 1; background: #0b0f14; border: 1px solid #1f2733; border-radius: 8px; }
+
 /* ─── Cue Mixer timeline (full-width bottom strip) ─── */
 .timeline-wrap { flex-shrink: 0; padding: 4px 12px 10px; max-height: 300px; overflow-y: auto; }
 .timeline-title {
