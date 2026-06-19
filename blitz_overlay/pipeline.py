@@ -7,6 +7,9 @@ from pathlib import Path
 from blitz_overlay.bell import BellController, map_sensitivity
 from blitz_overlay.calibration_status import compute_calibration
 from blitz_overlay.consensus import ConsensusBuilder
+from blitz_overlay.content.fusion import fuse_turn
+from blitz_overlay.content.judge import ContentJudge, StubContentJudge
+from blitz_overlay.content.timeline import TimelineBuffer
 from blitz_overlay.cues.audio import AUDIO_DETECTORS
 from blitz_overlay.cues.linguistic import LINGUISTIC_DETECTORS
 from blitz_overlay.cues.physio import RppgHeartRate
@@ -22,7 +25,8 @@ EMIT_EVERY_MS = 100  # throttle consensus emission to ~10 Hz
 
 class OverlaySession:
     def __init__(self, gate_threshold: float = 0.65, baseline_seconds: int = 90,
-                 fps: float = 30.0, log_dir: str | Path = "logs"):
+                 fps: float = 30.0, log_dir: str | Path = "logs",
+                 content_judge: ContentJudge | None = None):
         self.session_id = uuid.uuid4().hex[:12]
         self.detectors = (
             [cls() for cls in VISUAL_DETECTORS]
@@ -40,6 +44,9 @@ class OverlaySession:
         self._last_transcript_seq: int | None = None
         self.synchrony = SynchronyDetector()
         self.bell = BellController()
+        self.timeline = TimelineBuffer()
+        self.content_judge: ContentJudge = content_judge or StubContentJudge()
+        self._turn_history: list[dict] = []
         # Active-calibration (hard gate): completes only when every producing cue has a base.
         self._det_meta = [(d.cue_id, d.family, d.cue_id.split(".")[-1]) for d in self.detectors]
         self._calib_target = baseline_seconds
@@ -130,6 +137,8 @@ class OverlaySession:
             level = max(0.0, min(1.0, abs(raw_z) / 6.0))
             family_activity[fam] = max(family_activity.get(fam, 0.0), level)
 
+        self.timeline.add(frame.ts, [(cid, self._family_of_cue(cid), z) for cid, z in directed_z.items()])
+
         cues = []
         for det in self.detectors:
             if det.cue_id not in measurements:
@@ -154,6 +163,18 @@ class OverlaySession:
         self._last_consensus = out
         self.logger.log(out, baseline_mode=self.baseline.mode)
         return out
+
+    def judge_turn(self, question: str, answer: str, t0: int, t1: int) -> dict:
+        """Content-first verdict for one Q&A turn, fused with the cue activity in [t0, t1]."""
+        verdict = self.content_judge.judge(question, answer, self._turn_history, self.baseline)
+        cue_window = self.timeline.window(t0, t1)
+        result = fuse_turn(verdict, cue_window)
+        result["content"] = verdict.to_dict()
+        result["cue_window"] = cue_window
+        result["question"] = question
+        if verdict.available:
+            self._turn_history.append({"question": question, "answer": answer})
+        return result
 
     def should_emit(self, ts: int) -> bool:
         if ts - self._last_emit_ts >= EMIT_EVERY_MS:
