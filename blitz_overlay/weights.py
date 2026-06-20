@@ -199,6 +199,46 @@ CUE_WEIGHTS: dict[str, dict] = {
             " weak single-cue diagnosticity."
         ),
     },
+    "visual.head_movement": {
+        "effect_size_d": 0.30, "reliability_tier": 3, "family": "visual", "region": "head",
+        "citation": "Catalog cue 14 — head-movement increase (restlessness/discomfort) via head-pose variance.",
+    },
+    "visual.eye_squint": {
+        "effect_size_d": 0.25, "reliability_tier": 3, "family": "visual", "region": "eyes",
+        "citation": "AU7 eye squint — tension/contempt micro-cue; weak single-cue diagnosticity.",
+    },
+    "visual.mouth_stretch": {
+        "effect_size_d": 0.28, "reliability_tier": 3, "family": "visual", "region": "mouth",
+        "citation": "AU20 lip stretch — fear/tension grimace; weak-moderate.",
+    },
+    "visual.mouth_frown": {
+        "effect_size_d": 0.25, "reliability_tier": 3, "family": "visual", "region": "mouth",
+        "citation": "AU15 lip-corner depressor — negative-affect leakage; weak.",
+    },
+    "visual.mouth_shrug": {
+        "effect_size_d": 0.24, "reliability_tier": 3, "family": "visual", "region": "mouth",
+        "citation": "AU17 chin raise / mouth shrug — doubt / uncertainty emblem; weak.",
+    },
+    "visual.jaw_shift": {
+        "effect_size_d": 0.22, "reliability_tier": 3, "family": "visual", "region": "jaw",
+        "citation": "Lateral/forward jaw displacement — jaw tension proxy; weak.",
+    },
+    "visual.jaw_drop": {
+        "effect_size_d": 0.22, "reliability_tier": 3, "family": "visual", "region": "jaw",
+        "citation": "AU26 jaw drop / mouth opening — surprise/affect; weak.",
+    },
+    "visual.lip_roll": {
+        "effect_size_d": 0.26, "reliability_tier": 3, "family": "visual", "region": "mouth",
+        "citation": "Lip suck/roll (AU28-adjacent) — withholding marker; weak-moderate.",
+    },
+    "visual.brow_outer_raise": {
+        "effect_size_d": 0.25, "reliability_tier": 3, "family": "visual", "region": "brow",
+        "citation": "AU2 outer-brow raise — surprise / overemphasis; weak.",
+    },
+    "visual.contempt_asymmetry": {
+        "effect_size_d": 0.30, "reliability_tier": 2, "family": "visual", "region": "mouth",
+        "citation": "AU14 unilateral contempt — left-right mouth-dimple asymmetry; moderate micro-expression marker.",
+    },
 }
 
 

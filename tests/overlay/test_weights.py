@@ -66,3 +66,26 @@ def test_new_facial_cue_weights_present():
         assert abs(spec["effect_size_d"] - d) < 1e-9
         assert spec["reliability_tier"] == tier
         assert spec["citation"]
+
+
+def test_tier1_cue_weights_present():
+    from blitz_overlay.weights import CUE_WEIGHTS
+    expected = {
+        "visual.contempt_asymmetry": (0.30, 2, "mouth"),
+        "visual.head_movement": (0.30, 3, "head"),
+        "visual.mouth_stretch": (0.28, 3, "mouth"),
+        "visual.lip_roll": (0.26, 3, "mouth"),
+        "visual.eye_squint": (0.25, 3, "eyes"),
+        "visual.mouth_frown": (0.25, 3, "mouth"),
+        "visual.brow_outer_raise": (0.25, 3, "brow"),
+        "visual.mouth_shrug": (0.24, 3, "mouth"),
+        "visual.jaw_shift": (0.22, 3, "jaw"),
+        "visual.jaw_drop": (0.22, 3, "jaw"),
+    }
+    for cue_id, (d, tier, region) in expected.items():
+        spec = CUE_WEIGHTS[cue_id]
+        assert spec["family"] == "visual"
+        assert spec["region"] == region
+        assert abs(spec["effect_size_d"] - d) < 1e-9
+        assert spec["reliability_tier"] == tier
+        assert spec["citation"]
