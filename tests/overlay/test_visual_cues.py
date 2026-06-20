@@ -96,12 +96,13 @@ def _geo_frame(ts, **geo):
                                    "blendshapes": {}, "geometry": geo})
 
 
-def test_visual_registry_has_eleven_detectors():
+def test_visual_registry_has_twentyone_detectors():
     from blitz_overlay.cues.visual import VISUAL_DETECTORS
-    assert len(VISUAL_DETECTORS) == 11
+    assert len(VISUAL_DETECTORS) == 21
     ids = {d().cue_id for d in VISUAL_DETECTORS}
-    assert {"visual.gaze_fixation", "visual.pupil_dilation", "visual.eye_blocking",
-            "visual.eye_widen", "visual.nose_wrinkle", "visual.asymmetric_smile"}.issubset(ids)
+    assert {"visual.head_movement", "visual.eye_squint", "visual.mouth_stretch",
+            "visual.mouth_frown", "visual.mouth_shrug", "visual.jaw_shift", "visual.jaw_drop",
+            "visual.lip_roll", "visual.brow_outer_raise", "visual.contempt_asymmetry"}.issubset(ids)
 
 
 def test_pupil_dilation_reads_iris_ratio():
@@ -164,3 +165,55 @@ def test_gaze_fixation_measures_darting_velocity():
         gx = 0.4 if i % 2 else -0.4
         last = d2.measure(_geo_frame(t, gaze_x=gx, gaze_y=0.0))
     assert last > 0.2
+
+
+def _hp_frame(ts, yaw=0.0, pitch=0.0, roll=0.0):
+    from blitz_overlay.schemas import FeatureFrame
+    return FeatureFrame.from_dict({"ts": ts, "face_present": True, "confidence": 0.9,
+                                   "blendshapes": {}, "geometry": {},
+                                   "head_pose": {"yaw": yaw, "pitch": pitch, "roll": roll}})
+
+
+def test_visual_registry_has_twentyone_detectors_subset():
+    from blitz_overlay.cues.visual import VISUAL_DETECTORS
+    ids = {d().cue_id for d in VISUAL_DETECTORS}
+    assert {"visual.gaze_fixation", "visual.pupil_dilation", "visual.eye_blocking",
+            "visual.eye_widen", "visual.nose_wrinkle", "visual.asymmetric_smile"}.issubset(ids)
+
+
+def test_max_blendshape_cues_take_max_and_abstain():
+    from blitz_overlay.cues.visual import EyeSquint, JawDrop, JawShift
+    assert EyeSquint().measure(_bs_frame(0, eyeSquintLeft=0.2, eyeSquintRight=0.6)) == 0.6
+    assert EyeSquint().measure(_bs_frame(0)) is None
+    assert JawShift().measure(_bs_frame(0, jawLeft=0.1, jawRight=0.4, jawForward=0.2)) == 0.4
+    assert JawDrop().measure(_bs_frame(0, jawOpen=0.55)) == 0.55
+
+
+def test_contempt_asymmetry_is_absolute_difference():
+    from blitz_overlay.cues.visual import ContemptAsymmetry
+    d = ContemptAsymmetry()
+    assert abs(d.measure(_bs_frame(0, mouthDimpleLeft=0.6, mouthDimpleRight=0.1)) - 0.5) < 1e-9
+    assert d.measure(_bs_frame(0)) is None
+
+
+def test_head_movement_accumulates_over_window():
+    from blitz_overlay.cues.visual import HeadMovement
+    d = HeadMovement()
+    # steady head -> ~0 movement
+    last = 0.0
+    for t in range(0, 1600, 100):
+        last = d.measure(_hp_frame(t, yaw=5.0, pitch=2.0, roll=1.0))
+    assert last < 0.5
+    # jerky head -> larger movement
+    d2 = HeadMovement()
+    last2 = 0.0
+    for i, t in enumerate(range(0, 1600, 100)):
+        last2 = d2.measure(_hp_frame(t, yaw=20.0 if i % 2 else -20.0, pitch=0.0, roll=0.0))
+    assert last2 > 5.0
+
+
+def test_head_movement_abstains_without_head_pose():
+    from blitz_overlay.cues.visual import HeadMovement
+    from blitz_overlay.schemas import FeatureFrame
+    f = FeatureFrame.from_dict({"ts": 0, "face_present": True, "confidence": 0.9})
+    assert HeadMovement().measure(f) is None

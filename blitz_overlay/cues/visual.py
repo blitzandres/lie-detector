@@ -224,7 +224,106 @@ class AsymmetricSmile(CueDetector):
         return abs(bs.get("mouthSmileLeft", 0.0) - bs.get("mouthSmileRight", 0.0))
 
 
+HEAD_MOVE_WINDOW_MS = 2000
+
+
+class _MaxBlendshapeCue(CueDetector):
+    """Base for cues that are the max of a set of blendshape coefficients."""
+
+    direction = 1
+    keys: tuple[str, ...] = ()
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if not any(k in bs for k in self.keys):
+            return None
+        return max(bs.get(k, 0.0) for k in self.keys)
+
+
+class EyeSquint(_MaxBlendshapeCue):
+    cue_id = "visual.eye_squint"
+    keys = ("eyeSquintLeft", "eyeSquintRight")
+
+
+class MouthStretch(_MaxBlendshapeCue):
+    cue_id = "visual.mouth_stretch"
+    keys = ("mouthStretchLeft", "mouthStretchRight")
+
+
+class MouthFrown(_MaxBlendshapeCue):
+    cue_id = "visual.mouth_frown"
+    keys = ("mouthFrownLeft", "mouthFrownRight")
+
+
+class MouthShrug(_MaxBlendshapeCue):
+    cue_id = "visual.mouth_shrug"
+    keys = ("mouthShrugUpper", "mouthShrugLower")
+
+
+class JawShift(_MaxBlendshapeCue):
+    cue_id = "visual.jaw_shift"
+    keys = ("jawLeft", "jawRight", "jawForward")
+
+
+class JawDrop(_MaxBlendshapeCue):
+    cue_id = "visual.jaw_drop"
+    keys = ("jawOpen",)
+
+
+class LipRoll(_MaxBlendshapeCue):
+    cue_id = "visual.lip_roll"
+    keys = ("mouthRollUpper", "mouthRollLower")
+
+
+class BrowOuterRaise(_MaxBlendshapeCue):
+    cue_id = "visual.brow_outer_raise"
+    keys = ("browOuterUpLeft", "browOuterUpRight")
+
+
+class ContemptAsymmetry(CueDetector):
+    """Unilateral contempt (AU14) — left-right mouth-dimple asymmetry."""
+
+    cue_id = "visual.contempt_asymmetry"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if "mouthDimpleLeft" not in bs and "mouthDimpleRight" not in bs:
+            return None
+        return abs(bs.get("mouthDimpleLeft", 0.0) - bs.get("mouthDimpleRight", 0.0))
+
+
+class HeadMovement(CueDetector):
+    """Head-movement magnitude over a ~2 s window — restlessness/discomfort (catalog cue 14)."""
+
+    cue_id = "visual.head_movement"
+    direction = 1
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._hist: deque[tuple[int, float, float, float]] = deque()
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        hp = frame.head_pose
+        if not hp or not any(k in hp for k in ("yaw", "pitch", "roll")):
+            return None
+        now = frame.ts
+        self._hist.append((now, float(hp.get("yaw", 0.0)),
+                           float(hp.get("pitch", 0.0)), float(hp.get("roll", 0.0))))
+        while self._hist and self._hist[0][0] < now - HEAD_MOVE_WINDOW_MS:
+            self._hist.popleft()
+        if len(self._hist) < 2:
+            return 0.0
+        steps = 0.0
+        hist = list(self._hist)
+        for (_, y0, p0, r0), (_, y1, p1, r1) in zip(hist, hist[1:], strict=False):
+            steps += ((y1 - y0) ** 2 + (p1 - p0) ** 2 + (r1 - r0) ** 2) ** 0.5
+        return steps / (len(hist) - 1)
+
+
 VISUAL_DETECTORS = [
     BlinkRate, GazeAversion, BrowFlash, LipPress, JawTension,
     GazeFixation, PupilDilation, EyeBlocking, EyeWiden, NoseWrinkle, AsymmetricSmile,
+    HeadMovement, EyeSquint, MouthStretch, MouthFrown, MouthShrug,
+    JawShift, JawDrop, LipRoll, BrowOuterRaise, ContemptAsymmetry,
 ]
