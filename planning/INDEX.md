@@ -18,10 +18,13 @@ scores **content-pattern** deception markers (consistency · Reality-Monitoring 
 parallel, loosely coupled: the fast **cue engine** keeps the real-time rhythm + a timestamped timeline;
 the slow **content engine** judges each answer then *pulls the cue activity for that answer's time
 window* and fuses (content-primary, cue-confirm). Plus a **calibration reading phase** + **True/False
-dev scripts**. Full design: `docs/superpowers/specs/2026-06-19-content-first-qa-architecture-design.md`.
-Ollama is NOT yet installed (8 GB → small model `llama3.2:3b`/`qwen2.5:3b` Q4; content layer degrades
-gracefully to the cue engine when Ollama is down). **Body family (torso/hands/neck) = Phase 2** after
-the content engine.
+dev scripts**. Full design: `docs/superpowers/specs/2026-06-19-content-first-qa-architecture-design.md`;
+plan `…/plans/2026-06-19-content-engine-phase1.md`. **✅ BUILT (June 19):** `blitz_overlay/content/`
+(`ContentJudge` seam · deterministic `StubContentJudge` · `OllamaContentJudge` · `TimelineBuffer` ·
+content-primary `fuse_turn` · `session.judge_turn` · WS `turn` route) + browser Q&A panel + True/False/read
+dev scripts. **Ollama installed** (`llama3.2:3b`, ~2 GB) and verified live (TRUE script risk 0.10 vs FALSE
+0.40). Env-gated: server uses `OllamaContentJudge` only when `BLITZ_OVERLAY_CONTENT=ollama`; tests always
+use the stub (never hit a live LLM). Degrades gracefully to the cue engine when Ollama is down.
 
 **STATUS (updated June 19, 2026):**
 - ✅ **DONE & on `main` (GitHub):** Stage 1 walking skeleton (Visual + Physio families, 5 visual cues +
@@ -50,11 +53,32 @@ the content engine.
   - **rPPG honesty fix** (BUILT): `estimate_bpm` now **abstains unless a real pulse dominates** (peak-SNR
     gate) instead of reporting noise as a heart rate; UI relabeled **rPPG·cam** (camera estimate, not a
     sensor). Cue Mixer lanes fixed-height + scroll (no overlap).
-  - **132 tests, ruff+pytest green.** 22 cues live: 11 visual · 3 audio · 7 linguistic · 1 physio.
-- ⏭️ **NEXT, in priority order:** (1) ⭐ **Content engine (CONTENT-FIRST Q&A)** — the strategic pivot above;
-  build the Ollama `ContentJudge` + Q&A turns + time-aligned content-primary fusion + calibration reading +
-  True/False dev scripts (spec `…/2026-06-19-content-first-qa-architecture-design.md`). (2) **Body family**
-  (torso/hands/neck via MediaPipe Pose/Holistic) for the cue-engine rhythm — low weight. (3) Cross-modal
+  - **Content engine (CONTENT-FIRST Q&A)** (BUILT June 19 — see pivot block above).
+  - **Cue Polygon viz** (BUILT June 19): the linear Cue Mixer was replaced by a radial **N-sided polygon**
+    (`cue-polygon.js`) — each cue is a vertex (grouped by family into arcs), lit cues shoot a light to the
+    centre, the centre brightens with `convergence.n_lit` (synchrony) and flares + rings on an earned burst.
+    Static, scales toward ~300 cues. Vertices show **abbreviations (V1/A2/L3…)** with the full cue id on
+    **hover**. The **enneagram stays** (family-level viz). `cue-timeline.js` retired (unwired).
+  - **151 tests, ruff+pytest green.** 22 cues live: 11 visual · 3 audio · 7 linguistic · 1 physio.
+
+**📈 CUE-EXPANSION ROADMAP (toward the ~300-cue polygon — "more cues every time"):** today's 22 cues use
+only MediaPipe's *basic* output. The richer "detailed" cue set is real but tiered by cost:
+- **Tier 1 — CHEAP, browser-native, NOW (biggest quick win):** mine MediaPipe's **full 52 blendshapes**
+  (we use ~24 — unused: cheekPuff, mouthStretch/Funnel/Roll, jawOpen/Left/Right/Forward, browOuterUp,
+  mouthShrug/Dimple/Frown/Smile, eyeSquint, tongueOut…) **+ 478-landmark geometry** (lip-part distance,
+  mouth-corner asymmetry, brow height, nostril flare/width, swallow proxy). → dozens more visual cues, no
+  new model, no extra RAM. THIS is the answer to "I see only the front, not the detailed version."
+- **Tier 2 — MediaPipe Pose/Holistic (Body family):** torso/hands/neck/self-adaptors/shrug — browser-native,
+  low weight. Adds `B1…Bn` to the polygon.
+- **Tier 3 — heavy models (deferred, fight 8 GB):** **OpenGraphAU (41 facial AUs)** = the true "detailed AU"
+  layer; **Parselmouth** (jitter/shimmer/HNR/VOT audio); **MMPose** 133-keypoint body. Python-side, big RAM.
+- **Tier 4 — RF-DETR (researched June 19):** Apache-2.0 real-time DETR (detection/segmentation/keypoints);
+  30–126M params, **GPU/TensorRT-oriented, rough on Apple Silicon, no browser path.** Unique value =
+  **object-manipulation cue** (phone/cup/pen pacifying, catalog #20) via ONNX at low fps — OPTIONAL later,
+  behind a seam, accepting memory cost. Its pose duplicates MediaPipe (skip). Honest note: gross-body/object
+  cues are weak (d≈0.3–0.5); content + facial/voice dominate accuracy — more cues mainly enrich the polygon.
+- ⏭️ **NEXT, in priority order:** (1) **Tier-1 cue expansion** (full blendshapes + landmark geometry — cheap,
+  fills the polygon fast). (2) **Body family** (MediaPipe Pose). (3) Cross-modal
   coherence meta-cue. Deeper audio (Parselmouth) + thermal stay deferred (fight the M1/8 GB constraint).
 - Consensus voters: **Visual · Audio · Linguistic · Physio** (all 4 live on the branch; Body would make 5).
 
