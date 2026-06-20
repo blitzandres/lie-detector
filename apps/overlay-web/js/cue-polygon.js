@@ -90,8 +90,13 @@ export class CuePolygon {
   _interp() {
     const c = this._c;
     const EASE = 0.18;
-    const nLit = (c && c.convergence) ? (c.convergence.n_lit || 0) : 0;
-    const targetGlow = Math.max(0, Math.min(1, nLit / SYNC_BRIGHT));
+    const conv = (c && c.convergence) ? c.convergence : {};
+    const nLit = conv.n_lit || 0;
+    const nFam = conv.n_families || 0;
+    // Honest: the centre brightens mainly with independent CHANNELS (real convergence) — raw
+    // cue count only nudges it, so many correlated face cues can't light the centre on their own.
+    const targetGlow = Math.max(0, Math.min(1,
+      0.8 * Math.min(1, nFam / 2) + 0.2 * Math.min(1, nLit / SYNC_BRIGHT)));
     this._centerGlow += (targetGlow - this._centerGlow) * 0.15;
     this._pulse += 0.06;
 
@@ -228,7 +233,7 @@ export class CuePolygon {
     ctx.font = "bold 11px monospace";
     ctx.fillStyle = this._a(cCol, 0.6 + 0.4 * glow);
     ctx.textAlign = "center";
-    ctx.fillText(`${conv.n_lit || 0} cues · ${conv.n_families || 0} channels`, cx, 13);
+    ctx.fillText(`${conv.n_families || 0} channels · ${conv.n_lit || 0} cues`, cx, 13);
     ctx.textAlign = "left";
   }
 
