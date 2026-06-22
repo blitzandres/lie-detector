@@ -59,15 +59,24 @@ use the stub (never hit a live LLM). Degrades gracefully to the cue engine when 
     centre, the centre brightens with `convergence.n_lit` (synchrony) and flares + rings on an earned burst.
     Static, scales toward ~300 cues. Vertices show **abbreviations (V1/A2/L3…)** with the full cue id on
     **hover**. The **enneagram stays** (family-level viz). `cue-timeline.js` retired (unwired).
-  - **151 tests, ruff+pytest green.** 22 cues live: 11 visual · 3 audio · 7 linguistic · 1 physio.
+  - **Tier-1 cue expansion** (BUILT June 19): +10 browser-native visual cues from unused blendshapes +
+    head pose (head_movement, eye_squint, mouth_stretch/frown/shrug, jaw_shift/drop, lip_roll,
+    brow_outer_raise, contempt_asymmetry) → **Visual 11→21**. Plan `…/2026-06-19-tier1-cue-expansion.md`.
+  - **Cue views simplified** (June 20): text checklist RETIRED — **Polygon + Enneagram only**. Convergence
+    now **leads with CHANNELS** (independent families) not raw cue count, and the **polygon centre
+    brightness is channel-driven** (80% families / 20% count) — so many correlated face cues can't oversell.
+  - **rPPG skin-aware** (BUILT June 20): browser averages **only skin-toned pixels** (YCbCr per-pixel mask,
+    no new model) + reports `skin_fraction`; the physio cue's **quality scales with skin_fraction**. On top
+    of the earlier **peak-SNR abstain gate** (no fake BPM from noise) and the **rPPG·cam** honest label.
+  - **159 tests, ruff+pytest green.** 32 cues live: 21 visual · 3 audio · 7 linguistic · 1 physio.
+  - **⏸️ PROJECT ON HOLD (June 21)** at user's request — all work committed + pushed to branch
+    `feat/audio-linguistic` (NOT merged to `main`). Server run cmd: `BLITZ_OVERLAY_CONTENT=ollama
+    BLITZ_OVERLAY_BASELINE_SECONDS=20 python3 -m blitz_overlay`. Resume from the roadmap below.
 
-**📈 CUE-EXPANSION ROADMAP (toward the ~300-cue polygon — "more cues every time"):** today's 22 cues use
-only MediaPipe's *basic* output. The richer "detailed" cue set is real but tiered by cost:
-- **Tier 1 — CHEAP, browser-native, NOW (biggest quick win):** mine MediaPipe's **full 52 blendshapes**
-  (we use ~24 — unused: cheekPuff, mouthStretch/Funnel/Roll, jawOpen/Left/Right/Forward, browOuterUp,
-  mouthShrug/Dimple/Frown/Smile, eyeSquint, tongueOut…) **+ 478-landmark geometry** (lip-part distance,
-  mouth-corner asymmetry, brow height, nostril flare/width, swallow proxy). → dozens more visual cues, no
-  new model, no extra RAM. THIS is the answer to "I see only the front, not the detailed version."
+**📈 CUE-EXPANSION ROADMAP (toward the ~300-cue polygon — "more cues every time"):** now at 32 cues.
+- **Tier 1 — ✅ PARTLY DONE (June 19):** 10 blendshape/head-pose cues added (Visual 11→21). Still on the
+  table for free: the *remaining* unused blendshapes (cheekPuff, mouthFunnel, tongueOut…) + **478-landmark
+  geometry** (lip-part distance, mouth-corner asymmetry, brow height, nostril flare/width). More no-RAM cues.
 - **Tier 2 — MediaPipe Pose/Holistic (Body family):** torso/hands/neck/self-adaptors/shrug — browser-native,
   low weight. Adds `B1…Bn` to the polygon.
 - **Tier 3 — heavy models (deferred, fight 8 GB):** **OpenGraphAU (41 facial AUs)** = the true "detailed AU"
@@ -77,9 +86,14 @@ only MediaPipe's *basic* output. The richer "detailed" cue set is real but tiere
   **object-manipulation cue** (phone/cup/pen pacifying, catalog #20) via ONNX at low fps — OPTIONAL later,
   behind a seam, accepting memory cost. Its pose duplicates MediaPipe (skip). Honest note: gross-body/object
   cues are weak (d≈0.3–0.5); content + facial/voice dominate accuracy — more cues mainly enrich the polygon.
-- ⏭️ **NEXT, in priority order:** (1) **Tier-1 cue expansion** (full blendshapes + landmark geometry — cheap,
-  fills the polygon fast). (2) **Body family** (MediaPipe Pose). (3) Cross-modal
-  coherence meta-cue. Deeper audio (Parselmouth) + thermal stay deferred (fight the M1/8 GB constraint).
+- **Tier 2.5 — semantic-skin rPPG:** ✅ a *light* version shipped (YCbCr per-pixel skin mask in the browser,
+  no model). A heavier MediaPipe ImageSegmenter skin mask is the optional upgrade if rPPG still struggles.
+  (Instance segmentation stays Tier-4 / object cues only.)
+- ⏭️ **NEXT when resumed, in priority order:** (1) **Body family** (MediaPipe Pose/Holistic → `B1…Bn`,
+  torso/hands/neck, low weight) — the next "more cues" win and the 5th voter. (2) more Tier-1 landmark-geometry
+  cues. (3) Cross-modal coherence meta-cue. Deferred (fight 8 GB → "after more RAM"): OpenGraphAU 41 AUs,
+  Parselmouth audio, MMPose, RF-DETR object cue. **Possible accelerant the user raised: a stronger model
+  (e.g. Fable 5) to build faster + sharper.**
 - Consensus voters: **Visual · Audio · Linguistic · Physio** (all 4 live on the branch; Body would make 5).
 
 **ENVIRONMENT / where + how it operates (so we never redo this):**
