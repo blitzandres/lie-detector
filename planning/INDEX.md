@@ -96,6 +96,13 @@ use the stub (never hit a live LLM). Degrades gracefully to the cue engine when 
 - **Tier 2.5 — semantic-skin rPPG:** ✅ a *light* version shipped (YCbCr per-pixel skin mask in the browser,
   no model). A heavier MediaPipe ImageSegmenter skin mask is the optional upgrade if rPPG still struggles.
   (Instance segmentation stays Tier-4 / object cues only.)
+- **🎯 STAGE 2 — CUE DETECTION FIRST (June 23):** `planning/STAGE2_CUE_DETECTION_PLAN.md` +
+  `planning/stage2_cue_detection_reference/` + gate check `python3 planning/stage2_cue_detection.py --check`.
+  The **2A-3 gate** (≥12 cues / ≥3 families) currently **PASSES (32 cues / 4 families)** → 3D overlay
+  technically unblocked, but detection comes first. Honest: the gate is shallow (21/32 cues are
+  correlated face) — real upgrade = **2A Body family** (MediaPipe Pose = a 5th *independent* channel),
+  then 2B Tier-1.5 3D-mesh cues, 2C decorrelation. **Do NOT start STAGE2_3D_OVERLAY until 2A-3 re-passes
+  with Body wired (5 families).**
 - ⏭️ **NEXT when resumed, in priority order:** (1) **Body family** (MediaPipe Pose/Holistic → `B1…Bn`,
   torso/hands/neck, low weight) — the next "more cues" win and the 5th voter. (2) more Tier-1 landmark-geometry
   cues. (3) Cross-modal coherence meta-cue. Deferred (fight 8 GB → "after more RAM"): OpenGraphAU 41 AUs,
