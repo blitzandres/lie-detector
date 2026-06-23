@@ -86,6 +86,13 @@ use the stub (never hit a live LLM). Degrades gracefully to the cue engine when 
   **object-manipulation cue** (phone/cup/pen pacifying, catalog #20) via ONNX at low fps — OPTIONAL later,
   behind a seam, accepting memory cost. Its pose duplicates MediaPipe (skip). Honest note: gross-body/object
   cues are weak (d≈0.3–0.5); content + facial/voice dominate accuracy — more cues mainly enrich the polygon.
+- **🧊 3D RECONSTRUCTION ("Tesla-style vision") — research chapter (June 23):**
+  `docs/research/2026-06-23-3d-reconstruction-vision.md`. Key finding: **we ALREADY have a real-time 3D
+  face model** (MediaPipe 478 pts +z, head-pose matrix, 52 blendshapes = a 3D expression vector space) —
+  we just read it as 2D. Cheap next = *use* that 3D (depth motion, full 3D pose, 3D asymmetry). Real
+  upgrade = **EMOCA/SPARK** 3D-expression (Tier-3, after more RAM). Photoreal **Gaussian-splat** avatar =
+  low-ROI for lies, needs a GPU. Honest: a better 3D *view* sharpens cues, it does NOT make a lie certain
+  (ceiling stays ~70–75%). Slots in as a swappable visual front-end behind the existing `CueDetector`.
 - **Tier 2.5 — semantic-skin rPPG:** ✅ a *light* version shipped (YCbCr per-pixel skin mask in the browser,
   no model). A heavier MediaPipe ImageSegmenter skin mask is the optional upgrade if rPPG still struggles.
   (Instance segmentation stays Tier-4 / object cues only.)
