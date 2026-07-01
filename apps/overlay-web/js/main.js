@@ -42,7 +42,6 @@ document.getElementById("stt-toggle").addEventListener("click", () => {
   }
 });
 const cueVerifier = new CueVerifier({
-  rows: document.getElementById("cue-rows"),
   verdict: document.getElementById("verdict"),
   convergence: document.getElementById("convergence"),
 });

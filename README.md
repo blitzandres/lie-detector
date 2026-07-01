@@ -2,11 +2,11 @@
 
 > The open-source behavioral deception detection core.
 
-Blitz Engine is a modular, research-driven engine that analyzes text and WAV audio to detect behavioral deception signals. It combines 66 cues across visual, audio, linguistic, physiological, and cognitive analysis — fused using a Bayesian log-odds architecture with personal baseline calibration.
+Blitz Engine is a modular, research-driven engine that analyzes live webcam + mic input (plus text and WAV audio) to detect behavioral deception signals. The flagship app is the **Live Consensus Overlay**: 32 real-time cues across 4 voting families (visual · audio · linguistic · physio), fused with a Bayesian log-odds architecture, personal baseline calibration, and a two-gate consensus — plus an optional local-LLM **content engine** that judges the meaning of each Q&A answer and confirms it against the time-aligned cue activity.
 
 **Not a lie detector. A behavioral signal analyzer.**
 
-**▶ Run the Live Consensus Overlay (Stage 1):** see [docs/OVERLAY_README.md](docs/OVERLAY_README.md) — one command: `blitz-overlay`.
+**▶ Run the Live Consensus Overlay:** see [docs/OVERLAY_README.md](docs/OVERLAY_README.md) — one command: `blitz-overlay`.
 
 ---
 
@@ -45,19 +45,19 @@ All planning artifacts consolidated in [`planning/`](planning/) folder:
 
 ## Current Build Status
 
-The repository now includes a runnable **text + WAV audio MVP**:
+The flagship build is the **Live Consensus Overlay** (`blitz_overlay/` + `apps/overlay-web/`):
 
-- `blitz_engine/engine.py` provides `BlitzEngine` and `BlitzSession`
-- `modalities/linguistic/analyzer.py` emits the first linguistic `CueEvent`s
-- `modalities/audio/analyzer.py` emits WAV-based audio `CueEvent`s
-- `core/calibration/baseline.py` performs per-cue robust baseline normalization
-- `core/fusion/bayesian_fusion.py` computes posterior probability and cue ranking
+- **32 live cues · 4 voting families** — 21 visual (MediaPipe blendshapes, iris, landmark geometry), 3 audio (browser Web Audio scalars), 7 linguistic (live transcript lexicons), 1 physio (skin-aware webcam rPPG with an honest abstain gate)
+- **Two-gate consensus** — a FLAG requires ≥2 independent families AND posterior ≥ 0.65; statuses are CALIBRATING → CLEAR → WATCH → FLAG, never a binary "LIE"
+- **Content engine (optional)** — a local Ollama LLM judges each Q&A answer for content-pattern markers and fuses content-first with the cue timeline for that answer's window; degrades gracefully when Ollama is absent
+- **Live visualizations** — deforming enneagram (family view), radial Cue Polygon (per-cue synchrony view), synchrony bell + trust meter, hard-gated calibration card
+- **Hard-gated calibration** — the rolling personal baseline won't complete until every producing cue has enough samples
 
-What is still not implemented:
+The repository also includes the earlier **text + WAV audio engine** (`blitz_engine/engine.py`, `modalities/`), which shares the same calibration and fusion core.
 
-- video ingestion
-- visual cues
-- physiological / rPPG cues
+Not yet implemented:
+
+- Body family (MediaPipe Pose — 5th voter, planned in `planning/STAGE2_CUE_DETECTION_PLAN.md`)
 - REST API adapter
 
 Install locally from the repo root:

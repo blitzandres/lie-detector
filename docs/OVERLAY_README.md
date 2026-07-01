@@ -1,10 +1,19 @@
-# Live Consensus Overlay — Quickstart (Stage 1, webcam-only)
+# Live Consensus Overlay — Quickstart
 
 Real-time "AI-vision" deception **overlay** that runs entirely on your machine. The browser
-captures your webcam and runs MediaPipe + rPPG; a local Python engine detects visual cues +
-heart rate, fuses them by family with a two-gate consensus, and draws a telestrator + consensus
-panel. **Raw video never leaves your device** — only tiny feature vectors reach the engine over
-a localhost WebSocket. GitHub stores the code and runs CI; it never runs the live app.
+captures your webcam + mic and runs MediaPipe, rPPG sampling, audio feature extraction, and
+(optionally) live transcription; a local Python engine detects **32 cues across 4 voting
+families** (21 visual · 3 audio · 7 linguistic · 1 physio), fuses them by family with a
+two-gate consensus, and draws a telestrator, consensus panel, deforming **enneagram** (family
+view), and radial **Cue Polygon** (per-cue synchrony view). **Raw video never leaves your
+device** — only tiny feature vectors reach the engine over a localhost WebSocket. GitHub
+stores the code and runs CI; it never runs the live app.
+
+On top of the cue engine sits an optional **content engine**: a local Ollama LLM judges each
+Q&A answer for content-pattern markers (consistency, richness, verifiability, evasion) and
+fuses that with the cue activity from the same time window — content-primary, cue-confirm.
+Enable with `BLITZ_OVERLAY_CONTENT=ollama` (requires `ollama` + a small model like
+`llama3.2:3b`); without it the overlay degrades gracefully to the cue engine alone.
 
 > **Audio caveat (Linguistic family):** the only path by which audio leaves the device is the
 > optional **Linguistic transcriber** — when enabled it uses Chrome's Web Speech API, which streams
@@ -24,10 +33,12 @@ blitz-overlay             # starts engine + browser host, opens http://127.0.0.1
 
 (or `python -m blitz_overlay`). Allow camera access when prompted.
 
-- First ~90s = **CALIBRATING** (builds your rolling baseline; no flags permitted).
-- Then **CLEAR/WATCH**; a **FLAG** needs both the Visual family and the Physio (heart-rate)
-  family to agree — that's why rPPG is required in Stage 1.
-- Audio and Linguistic voters show "—" (not wired in Stage 1).
+- First ~90s = **CALIBRATING** (hard-gated: won't complete until every producing cue has
+  enough baseline samples; the calibration card shows per-channel progress and guidance).
+- Then **CLEAR/WATCH**; a **FLAG** needs any **2 independent families** to agree (Visual,
+  Audio, Linguistic, Physio are all live voters).
+- The **sensitivity slider** moves only the bell/burst operating point (K, lit-z, risk
+  floor) — the science weights never move.
 
 ## Config (optional)
 
