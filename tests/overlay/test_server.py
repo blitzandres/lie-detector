@@ -33,3 +33,15 @@ def test_ws_returns_consensus_for_a_feature_frame(tmp_path):
         assert msg["schema_version"]
         assert msg["status"] in ("CALIBRATING", "CLEAR", "WATCH", "FLAG")
         assert "families" in msg
+
+
+def test_ws_turn_message_returns_turn_result():
+    app = create_app(OverlayConfig(baseline_seconds=0))
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as ws:
+        ws.send_json({"type": "turn", "question": "Where were you?",
+                      "answer": "just somewhere with some people i guess", "t0": 0, "t1": 1000})
+        msg = ws.receive_json()
+        assert msg["type"] == "turn_result"
+        assert msg["content_available"] is True
+        assert 0.0 <= msg["combined"] <= 1.0

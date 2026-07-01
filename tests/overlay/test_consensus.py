@@ -51,9 +51,23 @@ def test_unwired_families_shown_not_fresh():
     cb = ConsensusBuilder()
     out = cb.build(cues=[], calibrating=False, ts=1000, regions={})
     names = {f.name: f for f in out.families}
-    assert names["audio"].wired is False and names["audio"].fresh is False
-    assert names["linguistic"].wired is False
+    # Stage 1 wires visual + physio + audio; linguistic remains unwired
+    assert names["audio"].wired is True   # audio is now a wired family
+    assert names["audio"].fresh is False  # no active cues → not fresh
+    assert names["linguistic"].wired is True   # linguistic is now a wired family
     assert names["visual"].wired is True
+
+
+def test_flag_reachable_via_visual_and_linguistic():
+    cb = ConsensusBuilder()
+    cues = [_cue("visual.gaze_aversion", Modality.VISUAL, 7.0, "eyes", d=0.7),
+            _cue("linguistic.pronoun_avoidance", Modality.LINGUISTIC, 7.0, "mouth", d=0.27)]
+    out = cb.build(cues=cues, calibrating=False, ts=1000,
+                   regions={"visual.gaze_aversion": "eyes",
+                            "linguistic.pronoun_avoidance": "mouth"})
+    assert out.status == "FLAG"
+    assert out.flag is True
+    assert out.n_agree == 2
 
 
 def test_active_cues_carry_region_for_telestrator():
@@ -77,6 +91,27 @@ def test_online_and_activity_fields_propagate():
     assert names["visual"].activity == 0.5
     # physio: wired but not in online_families → offline
     assert names["physio"].online is False
-    # audio: unwired → always offline regardless
+    # audio: wired but not in online_families → offline (no mic data in this call)
     assert names["audio"].online is False
     assert names["audio"].activity == 0.0
+
+
+def test_build_attaches_cue_rows_convergence_bell():
+    from blitz_overlay.schemas import CueRow
+    cb = ConsensusBuilder()
+    rows = [CueRow("visual.gaze_aversion", "visual", "eyes", "gaze_aversion", 3.0, True, True)]
+    conv = {"n_lit": 1, "n_families": 1, "burst": False, "lit_cue_ids": ["visual.gaze_aversion"]}
+    bell = {"ringing": False, "just_rang": False, "label": "strong deception-pattern convergence"}
+    out = cb.build(cues=[], calibrating=False, ts=1000, regions={},
+                   cue_rows=rows, convergence=conv, bell=bell)
+    assert out.cue_rows == rows
+    assert out.convergence == conv
+    assert out.bell == bell
+
+
+def test_build_defaults_verifier_fields_empty():
+    cb = ConsensusBuilder()
+    out = cb.build(cues=[], calibrating=False, ts=1000, regions={})
+    assert out.cue_rows == []
+    assert out.convergence == {}
+    assert out.bell == {}

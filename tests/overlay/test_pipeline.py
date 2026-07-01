@@ -67,3 +67,45 @@ def test_family_online_and_activity_after_calibration(tmp_path):
     assert visual.online is True, "visual family should be online with face present + measurements"
     assert 0.0 <= visual.activity <= 1.0, "activity must be a valid float in [0, 1]"
     assert c.status in ("CLEAR", "WATCH", "CALIBRATING")
+
+
+def _audio_feature(ts, *, f0=220.0, energy=0.04, pause_ratio=0.1, tremor=0.05,
+                   gaze=0.02, bpm=72, blink=0.05, jaw=0.80, confidence=0.9):
+    """Face + audio frame for pipeline tests."""
+    base = _feature(ts, gaze=gaze, bpm=bpm, blink=blink, jaw=jaw, confidence=confidence)
+    base["audio"] = {"f0": f0, "energy": energy, "pause_ratio": pause_ratio, "tremor": tremor}
+    return base
+
+
+def test_audio_family_wired_and_online_after_calibration(tmp_path):
+    """Feeding face+audio frames past calibration yields audio family wired=True, online=True.
+
+    The audio family must appear in families list as wired now that WIRED_FAMILIES includes it.
+    online=True when audio block is present and detectors produce measurements.
+    activity must be a valid float in [0, 1].
+    """
+    sess = OverlaySession(gate_threshold=0.65, baseline_seconds=0, log_dir=tmp_path)
+    last = None
+    for i in range(15):
+        last = sess.process(_audio_feature(int(i * 100)))
+    c = last
+    names = {f.name: f for f in c.families}
+
+    audio = names["audio"]
+    assert audio.wired is True, "audio family must be wired after WIRED_FAMILIES update"
+    assert audio.online is True, "audio family must be online when audio block present"
+    assert 0.0 <= audio.activity <= 1.0, "activity must be a valid float in [0, 1]"
+
+
+def test_audio_family_offline_when_no_audio_block(tmp_path):
+    """Without an audio block, audio family is wired but offline (no measurements flow)."""
+    sess = OverlaySession(gate_threshold=0.65, baseline_seconds=0, log_dir=tmp_path)
+    last = None
+    for i in range(10):
+        last = sess.process(_feature(int(i * 100)))  # no audio block
+    c = last
+    names = {f.name: f for f in c.families}
+
+    audio = names["audio"]
+    assert audio.wired is True, "audio is wired even without a mic"
+    assert audio.online is False, "audio is offline when no audio block in frame"

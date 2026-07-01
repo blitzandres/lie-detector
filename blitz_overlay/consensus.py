@@ -4,8 +4,8 @@ from __future__ import annotations
 from blitz_overlay.schemas import SCHEMA_VERSION, ActiveCue, Consensus, FamilyVote
 from core.fusion.bayesian_fusion import family_of, fuse_by_family, two_gate
 
-# Families displayed as voters, in panel order. Stage 1 wires visual + physio only.
-WIRED_FAMILIES = {"visual", "physio"}
+# Families displayed as voters, in panel order. Stage 1 wires visual + physio + audio.
+WIRED_FAMILIES = {"visual", "physio", "audio", "linguistic"}
 PANEL_FAMILIES = ["visual", "physio", "audio", "linguistic"]
 
 WATCH_RISK = 0.45  # risk above this (but not a FLAG) shows WATCH
@@ -18,7 +18,8 @@ class ConsensusBuilder:
     def build(self, cues, calibrating: bool, ts: int, regions: dict[str, str],
               message: str = "",
               online_families: set[str] | None = None,
-              family_activity: dict[str, float] | None = None) -> Consensus:
+              family_activity: dict[str, float] | None = None,
+              cue_rows=None, convergence=None, bell=None, calibration=None) -> Consensus:
         fused = fuse_by_family(cues)
         gate = two_gate(fused, threshold=self.gate_threshold)
         risk = fused["posterior"]
@@ -70,5 +71,9 @@ class ConsensusBuilder:
             n_required=gate["n_required"],
             families=families,
             active_cues=active,
+            cue_rows=cue_rows or [],
+            convergence=convergence or {},
+            bell=bell or {},
+            calibration=calibration or {},
             message=message,
         )

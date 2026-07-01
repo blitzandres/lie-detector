@@ -36,3 +36,17 @@ def test_estimate_bpm_returns_none_when_too_few_samples():
 def test_chrom_signal_length_matches_input():
     sig = chrom_signal(_synth_rgb(bpm=72, n=90, fps=30))
     assert len(sig) == 90
+
+
+def test_estimate_bpm_abstains_on_noise():
+    """No real pulse (random skin-color noise) -> abstain, not a fake BPM."""
+    import random
+    rng = random.Random(0)
+    samples = [[180 + rng.gauss(0, 3), 120 + rng.gauss(0, 3), 110 + rng.gauss(0, 3)]
+               for _ in range(300)]
+    assert estimate_bpm(samples, fps=30) is None
+
+
+def test_estimate_bpm_abstains_on_flat_input():
+    """Perfectly flat ROI (no variation at all) -> abstain."""
+    assert estimate_bpm([[180.0, 120.0, 110.0]] * 300, fps=30) is None

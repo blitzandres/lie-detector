@@ -12,6 +12,10 @@ import numpy as np
 MIN_SAMPLES = 64
 HR_LOW_HZ = 0.7   # 42 bpm
 HR_HIGH_HZ = 4.0  # 240 bpm
+# Honest gate: only report a BPM when the spectral peak genuinely dominates the band
+# (a real periodic pulse). On noisy / motion-corrupted webcam input the peak is not
+# dominant → return None (abstain) rather than dress up noise as a heart rate.
+MIN_PEAK_SNR = 6.0  # peak magnitude ÷ band-median magnitude
 
 
 def chrom_signal(rgb_samples: list[list[float]]) -> list[float]:
@@ -43,5 +47,12 @@ def estimate_bpm(rgb_samples: list[list[float]], fps: float) -> float | None:
     band = (freqs >= HR_LOW_HZ) & (freqs <= HR_HIGH_HZ)
     if not band.any():
         return None
-    peak_freq = freqs[band][int(np.argmax(spectrum[band]))]
+    band_spectrum = spectrum[band]
+    peak_idx = int(np.argmax(band_spectrum))
+    peak = float(band_spectrum[peak_idx])
+    median = float(np.median(band_spectrum))
+    # Abstain unless the pulse peak clearly dominates — honest "no lock" on noisy webcam input.
+    if median <= 1e-9 or peak / median < MIN_PEAK_SNR:
+        return None
+    peak_freq = freqs[band][peak_idx]
     return float(peak_freq * 60.0)

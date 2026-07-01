@@ -13,6 +13,11 @@
     <div class="stage">
       <video id="cam" playsinline muted></video>
       <canvas id="overlay"></canvas>
+      <div id="caption" class="caption" aria-live="polite"></div>
+      <div id="stt-notice" class="stt-notice">Transcript via Chrome cloud STT
+        <button id="stt-toggle" type="button">disable</button>
+      </div>
+      <div id="calibration" class="calib" style="display:none"></div>
     </div>
     <!-- RIGHT: signal dashboard -->
     <section class="panel">
@@ -29,7 +34,36 @@
       <div id="panel-body">
         <ul id="voters"></ul>
       </div>
+      <div class="verifier">
+        <div id="verdict" class="verdict">—</div>
+        <div id="convergence" class="convergence">0 channels · 0 cues firing</div>
+        <div class="sensitivity">
+          <label for="sens">sensitivity</label>
+          <input id="sens" type="range" min="0" max="1" step="0.05" value="0" />
+          <span class="sens-warn">↑ raises false alarms</span>
+        </div>
+        <div id="trust" class="trust">trust: 100% · bells/min: 0</div>
+      </div>
+      <div class="qa">
+        <div class="qa-title">Content engine · Q&amp;A</div>
+        <input id="qa-question" class="qa-question" placeholder="Question…"
+               value="Where were you last Tuesday evening?" />
+        <textarea id="qa-answer" class="qa-answer" rows="2"
+                  placeholder="Answer (live transcript fills if blank)…"></textarea>
+        <div class="qa-buttons">
+          <button id="qa-start" type="button">start answer</button>
+          <button id="qa-judge" type="button">judge</button>
+          <button id="qa-fill-read" type="button">read</button>
+          <button id="qa-fill-true" type="button">TRUE</button>
+          <button id="qa-fill-false" type="button">FALSE</button>
+        </div>
+        <div id="qa-verdict" class="qa-verdict">—</div>
+      </div>
     </section>
+  </div>
+  <div class="polygon-wrap">
+    <div class="polygon-title">Cue Polygon · radial synchrony</div>
+    <canvas id="cue-polygon" class="polygon-canvas"></canvas>
   </div>
   <script type="module" src="/static/js/main.js"></script>
 </body>

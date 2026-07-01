@@ -32,11 +32,51 @@ def test_feature_frame_tolerates_missing_optionals():
     assert frame.face_present is False
     assert frame.blendshapes == {}
     assert frame.rppg is None
+    assert frame.audio is None
+
+
+def test_feature_frame_audio_roundtrip():
+    """Audio block is preserved through from_dict when present."""
+    raw = {
+        "ts": 2000,
+        "face_present": True,
+        "confidence": 0.9,
+        "blendshapes": {},
+        "geometry": {},
+        "head_pose": {},
+        "audio": {"f0": 120.5, "energy": 0.03, "pause_ratio": 0.2, "tremor": 0.05},
+    }
+    frame = FeatureFrame.from_dict(raw)
+    assert frame.audio is not None
+    assert abs(frame.audio["f0"] - 120.5) < 1e-9
+    assert abs(frame.audio["pause_ratio"] - 0.2) < 1e-9
+    assert abs(frame.audio["tremor"] - 0.05) < 1e-9
+
+
+def test_feature_frame_audio_absent_when_key_missing():
+    """audio=None when the key is not present in the raw dict."""
+    frame = FeatureFrame.from_dict({"ts": 3000, "face_present": True, "confidence": 0.5})
+    assert frame.audio is None
 
 
 def test_region_enum_values():
     assert Region.EYES.value == "eyes"
     assert {r.value for r in Region} >= {"eyes", "brow", "mouth", "jaw", "forehead"}
+
+
+def test_feature_frame_carries_transcript_block():
+    from blitz_overlay.schemas import FeatureFrame
+    frame = FeatureFrame.from_dict({
+        "ts": 10, "face_present": True, "confidence": 0.9,
+        "transcript": {"text": "i was at home all night", "seq": 3},
+    })
+    assert frame.transcript == {"text": "i was at home all night", "seq": 3}
+
+
+def test_feature_frame_transcript_absent_is_none():
+    from blitz_overlay.schemas import FeatureFrame
+    frame = FeatureFrame.from_dict({"ts": 10, "face_present": True})
+    assert frame.transcript is None
 
 
 def test_consensus_to_dict_is_json_serializable():
@@ -59,3 +99,34 @@ def test_consensus_to_dict_is_json_serializable():
     payload = json.dumps(consensus.to_dict())
     assert '"status": "WATCH"' in payload
     assert '"region": "eyes"' in payload
+
+
+def test_feature_frame_carries_config_block():
+    from blitz_overlay.schemas import FeatureFrame
+    frame = FeatureFrame.from_dict({"ts": 1, "face_present": True,
+                                    "config": {"sensitivity": 0.7}})
+    assert frame.config == {"sensitivity": 0.7}
+    assert FeatureFrame.from_dict({"ts": 1}).config is None
+
+
+def test_cue_row_to_dict():
+    from blitz_overlay.schemas import CueRow
+    row = CueRow(cue_id="visual.gaze_aversion", family="visual", region="eyes",
+                 label="gaze_aversion", z=3.21, lit=True, online=True)
+    d = row.to_dict()
+    assert d == {"cue_id": "visual.gaze_aversion", "family": "visual", "region": "eyes",
+                 "label": "gaze_aversion", "z": 3.21, "lit": True, "online": True}
+
+
+def test_consensus_to_dict_includes_verifier_fields():
+    from blitz_overlay.schemas import SCHEMA_VERSION, Consensus, CueRow
+    c = Consensus(schema_version=SCHEMA_VERSION, ts=0, status="CLEAR", risk=0.1,
+                  flag=False, n_agree=0, n_required=2,
+                  cue_rows=[CueRow("visual.gaze_aversion", "visual", "eyes",
+                                   "gaze_aversion", 0.0, False, True)],
+                  convergence={"n_lit": 0, "n_families": 0, "burst": False},
+                  bell={"ringing": False, "just_rang": False})
+    d = c.to_dict()
+    assert d["cue_rows"][0]["cue_id"] == "visual.gaze_aversion"
+    assert d["convergence"]["burst"] is False
+    assert d["bell"]["ringing"] is False

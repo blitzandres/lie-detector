@@ -43,4 +43,9 @@ class RppgHeartRate(CueDetector):
     def quality(self, frame: FeatureFrame) -> float:
         base = super().quality(frame)
         fill = min(1.0, len(self._buf) / (WINDOW_SECONDS * self.fps))
-        return base * fill
+        # Skin-aware: down-weight when little real skin was sampled in the ROI (hair/glasses/
+        # shadow). skin_fraction comes from the browser's per-pixel skin mask; absent -> 1.0.
+        skin = 1.0
+        if frame.rppg:
+            skin = max(0.0, min(1.0, float(frame.rppg.get("skin_fraction", 1.0))))
+        return base * fill * skin

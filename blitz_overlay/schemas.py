@@ -34,6 +34,9 @@ class FeatureFrame:
     head_pose: dict = field(default_factory=dict)     # yaw/pitch/roll (degrees)
     geometry: dict = field(default_factory=dict)      # jaw_width_ratio, gaze_x, gaze_y, ear_*
     rppg: dict | None = None                  # {"forehead_rgb":[r,g,b], "cheek_rgb":[r,g,b]} or None
+    audio: dict | None = None                 # {"f0":Hz, "energy":rms, "pause_ratio":0-1, "tremor":cv} or None
+    transcript: dict | None = None            # {"text": str, "seq": int} or None
+    config: dict | None = None                # {"sensitivity": 0..1} or None
     schema_version: str = SCHEMA_VERSION
 
     @classmethod
@@ -46,6 +49,9 @@ class FeatureFrame:
             head_pose=dict(d.get("head_pose") or {}),
             geometry=dict(d.get("geometry") or {}),
             rppg=(dict(d["rppg"]) if d.get("rppg") else None),
+            audio=(dict(d["audio"]) if d.get("audio") else None),
+            transcript=(dict(d["transcript"]) if d.get("transcript") else None),
+            config=(dict(d["config"]) if d.get("config") else None),
             schema_version=str(d.get("schema_version", SCHEMA_VERSION)),
         )
 
@@ -93,6 +99,30 @@ class ActiveCue:
 
 
 @dataclass
+class CueRow:
+    """One row in the live Parallel Cue Verifier checklist."""
+
+    cue_id: str
+    family: str
+    region: str
+    label: str
+    z: float
+    lit: bool
+    online: bool
+
+    def to_dict(self) -> dict:
+        return {
+            "cue_id": self.cue_id,
+            "family": self.family,
+            "region": self.region,
+            "label": self.label,
+            "z": round(self.z, 3),
+            "lit": self.lit,
+            "online": self.online,
+        }
+
+
+@dataclass
 class Consensus:
     """Engine → browser payload driving the overlay."""
 
@@ -105,6 +135,10 @@ class Consensus:
     n_required: int        # families required to agree (2)
     families: list[FamilyVote] = field(default_factory=list)
     active_cues: list[ActiveCue] = field(default_factory=list)
+    cue_rows: list[CueRow] = field(default_factory=list)
+    convergence: dict = field(default_factory=dict)
+    bell: dict = field(default_factory=dict)
+    calibration: dict = field(default_factory=dict)
     message: str = ""      # degradation/status message (spec §8)
 
     def to_dict(self) -> dict:
@@ -118,5 +152,9 @@ class Consensus:
             "n_required": self.n_required,
             "families": [f.to_dict() for f in self.families],
             "active_cues": [c.to_dict() for c in self.active_cues],
+            "cue_rows": [r.to_dict() for r in self.cue_rows],
+            "convergence": self.convergence,
+            "bell": self.bell,
+            "calibration": self.calibration,
             "message": self.message,
         }
