@@ -57,13 +57,14 @@ document.getElementById("sens").addEventListener("input", (e) => {
 const wsUrl = `ws://${location.host}/ws`;
 let qaPanel;
 const ws = new WsClient(wsUrl, (c) => {
-  if (c.type === "turn_result") { qaPanel.showResult(c); return; }
+  if (c.type === "turn_result") { qaPanel.showResult(c); enneagram.setTurn(c); return; }
   renderer.setConsensus(c);
   enneagram.setConsensus(c);
   cueVerifier.setConsensus(c);
   cuePolygon.setConsensus(c);
   calibration.setConsensus(c);
   bellPlayer.handle(c.bell);
+  enneagram.setTrust(bellPlayer.trust());
   trustEl.textContent =
     `trust: ${Math.round(bellPlayer.trust() * 100)}% · bells/min: ${bellPlayer.bellCount()}`;
 },
