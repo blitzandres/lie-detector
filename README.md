@@ -124,141 +124,103 @@ The 85-99% numbers in papers are lab overfitting on tiny datasets (121-320 clips
 
 ## How It Works
 
-### 1 · User Session Flow
+### 1 · Live Consensus Overlay — dataflow (as built)
 
-Consent gate → 90–180s personal baseline → per-response analysis → convergence gate → verdict or explicit abstain.
-
-```mermaid
-flowchart TD
-    START(["User opens Blitz Engine\n(CLI / Extension / API)"])
-
-    START --> CONSENT["Consent Gate\n─────────────────────\nvalidates: consent flag\nuse_case field\njurisdiction field"]
-    CONSENT -->|"missing or blocked use_case"| BLOCKED["403 Access Denied\nno session created"]
-    CONSENT -->|approved| BASELINE
-
-    subgraph SETUP ["PHASE 1 — Baseline Calibration  (90–180s)"]
-        BASELINE["Record neutral baseline clip\n─────────────────────\nCaptures: FramePacket stream\n+ AudioChunkPacket stream\nduring neutral speech"]
-        BASELINE --> BQUALITY{"Quality gate\nface tracked?\nclean audio?"}
-        BQUALITY -->|fail| RETRY_B["Retry — bad input\n(return reason to user)"]
-        RETRY_B --> BASELINE
-        BQUALITY -->|pass| CALIBRATED["BaselineProfile stored\n─────────────────────\nper-cue: median + MAD\n(robust z-score anchors)\nExpires at session end"]
-    end
-
-    CALIBRATED --> QUESTION
-
-    subgraph ANALYSIS ["PHASE 2 — Per-Response Analysis  (15–30s per clip)"]
-        QUESTION["Question asked / clip played"]
-        QUESTION --> CAPTURE["Capture response\nFramePacket + AudioChunkPacket"]
-        CAPTURE --> QGATE{"Input quality?\n720p+, stable face\nclean audio, SNR ok"}
-        QGATE -->|fail| ABSTAIN["BlitzOutput: ABSTAIN\nreason: input_quality_insufficient"]
-        QGATE -->|pass| EXTRACT["Feature Extraction — all local\n5 modality chains in parallel\n→ VisualCueFrame\n→ AudioCueWindow\n→ LinguisticCueWindow\n→ PhysioCueWindow\n→ CBCAPacket"]
-        EXTRACT --> NORMALIZE["Baseline Normalization\n─────────────────────\nz_i = (x − median) / (1.4826×MAD)\nper cue, vs personal baseline"]
-        NORMALIZE --> FUSE["Bayesian Fusion\nlogit(P) = logit(0.30)\n+ Σ[w_i × (d_i×z_i − d_i²/2)]"]
-        FUSE --> GATE{"Convergence Gate\nposterior > 0.65\nAND active_families ≥ 2?"}
-        GATE -->|no| ABSTAIN
-        GATE -->|yes| SCORE["PosteriorPacket → BlitzOutput\nrisk_score · uncertainty\ncue_attribution ranked"]
-    end
-
-    SCORE -->|"CuePacket JSON only\n→ Claude API"| NARRATIVE["NarrativeText returned\nhuman-readable · caveats included"]
-    NARRATIVE --> REPORT["BlitzOutput FINAL\nrisk_score · uncertainty\ncue_attribution · narrative\nnot_for_sole_decision: true"]
-    ABSTAIN --> LOG
-    REPORT --> LOG["AuditLog written\nsession_id · timestamp · use_case"]
-
-    REPORT --> NEXT{"Analyze\nanother response?"}
-    NEXT -->|yes| QUESTION
-    NEXT -->|no| DONE(["Session complete\nraw media wiped from memory"])
-```
-
----
-
-### 2 · Modality Extraction — Technical Sequence
-
-Each modality chain runs in parallel. Data passes as typed packet objects between library calls, joined into a feature bus before fusion.
+All heavy extraction happens in the browser; only tiny feature vectors cross a localhost WebSocket. Raw video never leaves the device.
 
 ```mermaid
 flowchart LR
-    subgraph VISUAL ["VISUAL  (per frame)"]
+    subgraph BROWSER ["BROWSER — all extraction, raw media never leaves"]
         direction TB
-        V1["MediaPipe FaceMesh\n→ FaceMeshPacket\nlandmarks_3d[478]\nblink_EAR, tracking_conf"]
-        V1 -->|"visual.facemesh.ready"| V2["OpenGraphAU\n→ AUPacket\nau_intensity[41 keys]\nau_presence[41 keys]"]
-        V1 -->|"cached frame"| V3["MMPose / rtmlib\n→ Pose133Packet\nkeypoints_133[{x,y,conf}]"]
-        V1 -->|"cached frame"| V4["InsightFace\n→ GazeHeadPacket\nhead_pose{yaw,pitch,roll}\ngaze{yaw,pitch,eye_contact_prob}"]
-        V2 & V3 & V4 -->|"join by frame_id\nmodality.visual.ready"| VCUE["VisualCueFrame\nblink_rate_hz · au_41\npose_133 · head_pose · gaze\nquality{face_ok, pose_ok}"]
+        CAM["Webcam"] --> MP["MediaPipe Face Landmarker\n478 landmarks · 52 blendshapes\niris radius · head pose"]
+        CAM --> RPPG["rPPG sampler\nskin-masked ROI means (YCbCr)\n+ skin_fraction quality"]
+        MIC["Mic"] --> WA["Web Audio scalars\nF0 · energy · pause ratio · tremor proxy"]
+        MIC -.->|"optional — in-page notice + toggle\n(Chrome cloud STT)"| STT["Web Speech API\nlive transcript"]
+        MP --> FF["FeatureFrame (~30 Hz)\nfeature vectors only"]
+        RPPG --> FF
+        WA --> FF
+        STT -.-> FF
     end
 
-    subgraph AUDIO ["AUDIO  (per 1s window)"]
+    FF -->|"localhost WebSocket"| CUES
+
+    subgraph ENGINE ["PYTHON ENGINE — localhost, local math only"]
         direction TB
-        A1["librosa\n→ ProsodyPacket\nf0_hz_series, voiced_prob\nrms_series, f0_mean/std"]
-        A1 -->|"audio.prosody.ready"| A2["Parselmouth/Praat\n→ VoiceQualityPacket\njitter · shimmer · hnr_db\ntremor_index"]
-        A2 -->|"audio.voice_quality.ready"| A3["CrisperWhisper\n→ TranscriptPacket\ntext · words[{w,start_ms,conf}]\nfiller_words[{w,start_ms}]"]
-        A3 -->|"audio.asr.ready"| A4["vitallens rPPG\n→ CardioPacket\nhr_bpm · hrv_rmssd_ms\nrr_intervals_ms"]
-        A1 & A2 & A3 & A4 -->|"join by time window\nmodality.audio.ready"| ACUE["AudioCueWindow\nprosody · voice_quality\nasr · cardio · quality{snr_db}"]
+        CUES["32 cue detectors\n21 visual · 3 audio · 7 linguistic · 1 physio"]
+        CUES --> CAL["Rolling personal baseline\nz = (x − median) / (1.4826 × MAD)\nhard-gated calibration\n(every producing cue needs ≥8 samples)"]
+        CAL --> FUSE["Science-weighted family fusion\nlogit(P) = logit(0.30) + Σ w·(d·z − d²/2)\nweights fixed from published effect sizes"]
+        FUSE --> GATE{"Two-gate consensus\nposterior ≥ 0.65\nAND ≥ 2 independent families"}
+        CUES --> SYNC["Synchrony detector\nburst = ≥K lit cues across ≥2 families\nwithin ~1s window"]
+        SYNC --> BELL["Bell + trust meter\nrings only on burst + sustained risk\n(honest label, never 'LIE')"]
+        GATE --> BELL
     end
 
-    subgraph LING ["LINGUISTIC  (per utterance)"]
-        direction TB
-        L1["spaCy nlp(text)\n→ SpacyPacket\npos/ner/morph/dep counts\ndoc_len_tokens"]
-        L1 -->|"ling.spacy.ready"| L2["VADER\n→ VaderPacket\nsentiment{neg,neu,pos,compound}"]
-        L2 -->|"ling.vader.ready"| L3["NRCLex\n→ NRCEmotionPacket\nemotions8{anger,fear,trust...}"]
-        L3 -->|"ling.nrc.ready"| L4["TextDescriptives\n→ TextDescPacket\nreadability · coherence\ncomplexity{ttr,mean_sent_len}"]
-        L4 -->|"ling.textdesc.ready"| L5["SentenceTransformer\n→ SemanticPacket\ncbca_semantic_distance\ncontradiction_distance"]
-        L1 & L2 & L3 & L4 & L5 -->|"join by utterance_id\nmodality.linguistic.ready"| LCUE["LinguisticCueWindow\nspacy · sentiment · emotions8\ntextdesc · semantic · transcript_ref"]
-    end
-
-    subgraph PHYSIO ["PHYSIO  (per window)"]
-        direction TB
-        P1["vitallens multi-ROI\n→ PhysioCueWindow\nroi_delta{forehead,cheekL,cheekR,chin}\nroi_divergence_index\nperfusion_asymmetry"]
-        P1 -->|"modality.physiological.ready"| PCUE["PhysioCueWindow ✓"]
-    end
-
-    subgraph CBCA ["CBCA/RM  (needs ling + visual)"]
-        direction TB
-        CB1["cbca_rm_score(\n  LinguisticCueWindow,\n  VisualCueFrame[]\n)\n→ CBCAPacket\ncbca_criteria_scores[dict]\nrm_score · statement_quality"]
-        CB1 -->|"cbca.ready"| CCUE["CBCAPacket ✓"]
-    end
-
-    VCUE & ACUE & LCUE & PCUE & CCUE -->|"all modalities present\n→ Fusion Stage"| FUSE(["→ Fusion"])
+    GATE --> OUT["Consensus payload (~10 Hz)\nstatus · risk · families (online/activity/vote)\nactive cues · convergence · bell"]
+    OUT -->|"WebSocket"| UI["Overlay UI\ntelestrator · consensus panel\nenneagram (family view)\nCue Polygon (per-cue view)"]
 ```
+
+Statuses are **CALIBRATING → CLEAR → WATCH → FLAG** — never a binary "LIE". A FLAG requires two independent modality families to agree while combined risk clears the gate.
 
 ---
 
-### 3 · Fusion & Output — Technical Sequence
+### 2 · Content Engine — Q&A layer (as built, optional)
 
-Four staged fusion pipeline: evidence collection → baseline normalization → Bayesian accumulation → convergence gate → BlitzOutput → Claude narrative.
+The meaning of speech is the primary layer; behavioral cues are secondary, time-aligned confirmation. A local Ollama LLM judges each answer's content patterns — never factual truth.
+
+```mermaid
+flowchart LR
+    Q["Q&A panel\nquestion asked"] --> ANS["Answer transcript\n+ [t0, t1] window"]
+    ANS -->|"WS 'turn' message\n(off-thread, never blocks cues)"| JUDGE["ContentJudge — local Ollama LLM\nconsistency · RM richness\nverifiability · evasion"]
+    TLB["TimelineBuffer\nper-frame cue rhythm"] -->|"window(t0, t1)\ncue activity during the answer"| CFUSE["Content-primary fusion\ncontent leads · cues confirm"]
+    JUDGE --> CFUSE
+    CFUSE --> VERDICT["Turn verdict → browser\ncontent risk + cue confirmation"]
+```
+
+Enable with `BLITZ_OVERLAY_CONTENT=ollama` (small local model, e.g. `llama3.2:3b`). Without Ollama the system degrades gracefully to the cue engine alone.
+
+---
+
+### 3 · Fusion & Consensus — the math (as built)
 
 ```mermaid
 flowchart TD
-    IN(["← 5 modality feature buses"])
+    IN(["FeatureFrame stream"])
 
-    IN --> S1["STAGE 1 · Per-Cue Evidence\n─────────────────────────────\nCueEvidencePacket\ncues: list of {\n  cue_id, modality_family\n  x: raw cue value\n  d_i: effect size weight\n  reliability_w: cue reliability\n  llr_raw: log-likelihood ratio\n}\npublish: fusion.evidence.ready"]
+    IN --> S1["STAGE 1 · Cue detection\n─────────────────────\n32 detectors emit raw cue values\neach with a science weight:\nd (effect size) + reliability w\ncitation-traceable, fixed — never learned"]
 
-    S1 -->|"baseline.ready = true\n(90–180s stats loaded)"| S2
+    S1 --> S2["STAGE 2 · Robust baseline normalization\n─────────────────────\nz_i = (x − median) / (1.4826 × MAD + ε)\nrolling personal window — person-relative,\nnot population thresholds"]
 
-    S2["STAGE 2 · Robust Baseline Normalization\n─────────────────────────────\nNormalizedEvidencePacket\nper cue:\n  z_i = (x − median) / (1.4826 × MAD + ε)\n  median, MAD from baseline window\n─────────────────────────────\nRolling baseline: 90–180s window\nRobust Z — not standard Z\nOutlier resistance via MAD\npublish: fusion.normalized.ready"]
+    S2 --> S3["STAGE 3 · Bayesian log-odds accumulation\n─────────────────────\nlogit(P) = logit(0.30) + Σ [ w_i × (d_i × z_i − d_i²/2) ]\nprior 0.30 · grouped by family\n(visual · audio · linguistic · physio)"]
 
-    S2 --> S3["STAGE 3 · Bayesian Log-Odds Accumulation\n─────────────────────────────\nPosteriorPacket\nlog_odds: float\nposterior = sigmoid(log_odds)\ncontributing_cues ranked by |w_i × d_i × z_i|\nactive_families: set of modality names\n─────────────────────────────\nFORMULA:\nlogit(P) = logit(0.30)\n         + Σ [ w_i × (d_i × z_i − d_i²/2) ]\n\nPrior = 0.30 (avoids overconfidence)\nw_i = reliability_w\nd_i = effect size weight\nz_i = baseline-normalized value\npublish: fusion.posterior.updated  (each window)"]
+    S3 --> GATE{"STAGE 4 · Two-gate convergence\n─────────────────────\nposterior ≥ 0.65\nAND ≥ 2 independent families agree"}
 
-    S3 --> GATE{"STAGE 4 · Convergence Gate\n─────────────────────────────\nDecisionPacket\npassed = (posterior > 0.65)\n       AND (active_families ≥ 2)\n─────────────────────────────\nBlocks single-modality false alarms\nRequires cross-modal agreement"}
+    GATE -->|"not passed"| STATUS["Status: CLEAR or WATCH\n(honest cap: FLAG unreachable\nwith < 2 fresh families)"]
+    GATE -->|"passed"| FLAG["Status: FLAG\n⚠ high deception-pattern risk\nnot_for_sole_decision: true"]
 
-    GATE -->|"passed = false\naccumulate next window"| S3
-
-    GATE -->|"passed = true\ndecision.ready"| BUILD
-
-    BUILD["BlitzOutput Builder\n─────────────────────────────\nrisk_score = posterior\nuncertainty = posterior variance\ncue_attribution: list of {\n  cue_id · modality_family\n  weight · direction · evidence\n}\nnarrative = null  ← filled next\nnot_for_sole_decision = true  ← hardcoded\npublish: output.blitz.ready"]
-
-    BUILD -->|"OUTBOUND BOUNDARY\nno raw media crosses this line"| CLAUDE
-
-    CLAUDE["CuePacket → Claude API\n─────────────────────────────\n✅ JSON only\n✅ No raw video / audio\n✅ No full ASR transcript\n─────────────────────────────\n{\n  session_id\n  risk_score, uncertainty\n  top_cues: [{\n    label, modality_family\n    signed_strength, short_evidence\n  }]\n  constraints: {no_raw_media: true}\n}\n─────────────────────────────\nClaude returns → NarrativeText"]
-
-    CLAUDE --> FINAL["BlitzOutput FINAL\n─────────────────────────────\nrisk_score: float\nuncertainty: float\ncue_attribution: list\nnarrative: str\nnot_for_sole_decision: true\nmetadata: {session_id, t_end_ms, model_version}"]
-
-    FINAL --> CLI["CLI / SDK\nterminal + JSON"]
-    FINAL --> API2["REST API\nJSON response"]
-    FINAL --> EXT["Chrome Extension\nVHS signal widget"]
-    FINAL --> AUDIT["AuditLog\nsession · timestamp · use_case · config_hash"]
-
-    GATE -->|"quality gate failed\nbefore reaching posterior > 0.65"| ABS["BlitzOutput: ABSTAIN\nrisk_score: null\nreason: convergence_not_reached\n     OR input_quality_insufficient\nStill writes to AuditLog"]
+    STATUS --> LOGN["Prediction log\nderived decisions only —\nnever raw biometric data"]
+    FLAG --> LOGN
 ```
+
+The sensitivity slider in the UI moves only the bell/burst operating point (K, lit-z, risk floor). **The science weights never move**, and nothing is ever trained on the system's own predictions.
+
+---
+
+### 4 · Research Tier — offline visual analyzer (planned next)
+
+For recorded video only — these models need raw frames and are too heavy for the live path (M1/8GB rule: one model loaded at a time, sequential).
+
+```mermaid
+flowchart LR
+    VID["Recorded video file"] --> PF["Py-Feat Detector v2\n20 AUs w/ intensity · emotions\nvalence/arousal · gaze · head pose"]
+    VID --> OG["OpenGraphAU\ncomplementary AU detector\n(ensemble robustness)"]
+    VID --> OF["OpenCV optical flow\n(Farneback) temporal dynamics\nmicro-expression spotting"]
+    PF --> CE["Typed CueEvents\ncue_id · value · effect_size\nreliability_w · timestamps"]
+    OG --> CE
+    OF --> CE
+    CE --> SAME["Same fusion core\nMAD baseline → log-odds → two-gate"]
+```
+
+LibreFace is the documented fallback AU backend. Honest caveat carried into governance docs: micro-expressions have low base rates and modest real-world effect sizes.
 
 ---
 
@@ -285,9 +247,11 @@ Full specification: [planning/BLITZ_ENGINE_SPEC.md](planning/BLITZ_ENGINE_SPEC.m
 
 ---
 
-## The 66 Cues
+## The 66-Cue Catalog
 
-| Domain | Count | Key signals |
+The research catalog spans 66 cues; **32 are live in the overlay today** (21 visual · 3 audio · 7 linguistic · 1 physio). The rest arrive via the Body family, the offline research tier, and deeper audio.
+
+| Domain | Catalog count | Key signals |
 |---|---|---|
 | Visual / facial | 20 | Micro-expressions, gaze fixation, blink rebound, pupil dilation |
 | Audio / vocal | 13 | VOT shortening (AUC 0.89), voice tremor, formant dispersion |
@@ -299,7 +263,25 @@ Full catalog: [docs/CUE_CATALOG.md](docs/CUE_CATALOG.md)
 
 ---
 
-## Quick Start (planned — Phase 1)
+## Quick Start
+
+Run the live overlay (webcam + mic, everything local):
+
+```bash
+pip install -e .
+blitz-overlay        # opens http://127.0.0.1:8000
+```
+
+With the content engine (needs [Ollama](https://ollama.com) + a small model):
+
+```bash
+ollama pull llama3.2:3b
+BLITZ_OVERLAY_CONTENT=ollama blitz-overlay
+```
+
+Full guide (config, tuning, privacy): [docs/OVERLAY_README.md](docs/OVERLAY_README.md)
+
+### Video-file SDK (planned — research tier)
 
 ```python
 from blitz_engine import BlitzEngine
@@ -358,10 +340,13 @@ EU AI Act (Regulation 2024/1689) applies. Do not deploy for high-risk uses in EU
 ## Status
 
 - [x] Phase 0 — Research complete, planning consolidated, repo initialized
-- [ ] Phase 1 — Core engine (all 5 layers + modality plugins + CLI)
-- [ ] Phase 2 — Applications (FastAPI, Python SDK, Chrome Extension)
-- [ ] Phase 3 — Validation (benchmark + fairness audit + model card)
-- [ ] Phase 4 — Hardware extension (thermal camera)
+- [x] Live Consensus Overlay — 32 cues, 4 voting families, two-gate consensus, hard-gated calibration, skin-aware rPPG, synchrony bell
+- [x] Content engine — local Ollama LLM judges Q&A answers, content-primary fusion with the cue timeline
+- [x] Text + WAV engine — CLI `blitz analyze-text`, linguistic + audio analyzers on the shared fusion core
+- [ ] Body family — MediaPipe Pose as the 5th voter (`planning/STAGE2_CUE_DETECTION_PLAN.md`)
+- [ ] Research tier — offline visual analyzer (Py-Feat v2 + OpenGraphAU + optical flow)
+- [ ] Validation — benchmark + fairness audit + model card
+- [ ] Hardware extension — thermal camera
 
 ---
 
