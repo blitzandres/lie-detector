@@ -264,6 +264,14 @@ CUE_WEIGHTS: dict[str, dict] = {
         "effect_size_d": 0.30, "reliability_tier": 3, "family": "visual", "region": "eyes",
         "citation": "Catalog cue 60 family — blink duration/rebound timing complements rate; long closures under load.",
     },
+    "visual.facial_rigidity": {
+        "effect_size_d": 0.35, "reliability_tier": 3, "family": "visual", "region": "head",
+        "citation": "Reduced expressivity/illustrators under cognitive load — overall rigidity vs personal baseline (DePaulo et al. 2003 cue family: decreased movement).",
+    },
+    "visual.microexpression_burst": {
+        "effect_size_d": 0.20, "reliability_tier": 4, "family": "visual", "region": "head",
+        "citation": "Micro-expression onset proxy — HONEST caveat: low base rates and modest real-world effect sizes (Porter & ten Brinke 2008); weighted low by design.",
+    },
 }
 
 

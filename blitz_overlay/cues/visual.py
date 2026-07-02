@@ -481,6 +481,83 @@ class BlinkDuration(CueDetector):
         return 0.0
 
 
+RIGIDITY_WINDOW_MS = 4_000       # window for expressivity variance
+MICRO_WINDOW_MS = 1_000          # window for onset-velocity spikes
+
+
+class _BlendshapeWindowCue(CueDetector):
+    """Shared rolling buffer of the full blendshape vector."""
+
+    direction = 1
+    window_ms = 1_000
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._hist: deque[tuple[int, dict]] = deque()
+
+    def _push(self, frame: FeatureFrame) -> list[tuple[int, dict]] | None:
+        bs = frame.blendshapes
+        if not bs:
+            return None
+        now = frame.ts
+        self._hist.append((now, dict(bs)))
+        while self._hist and self._hist[0][0] < now - self.window_ms:
+            self._hist.popleft()
+        return list(self._hist)
+
+
+class FacialRigidity(_BlendshapeWindowCue):
+    """Expressivity collapse — LOW blendshape variance over ~4 s = freezing under load.
+
+    Raw measure = mean per-key standard deviation; direction = -1 (low is suspicious).
+    """
+
+    cue_id = "visual.facial_rigidity"
+    direction = -1
+    window_ms = RIGIDITY_WINDOW_MS
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        hist = self._push(frame)
+        if hist is None:
+            return None
+        if len(hist) < 5:
+            return None   # not enough window yet — abstain, don't fake stillness
+        keys: set[str] = set()
+        for _, bs in hist:
+            keys.update(bs)
+        stds = []
+        for k in keys:
+            vals = [bs.get(k, 0.0) for _, bs in hist]
+            mean = sum(vals) / len(vals)
+            stds.append((sum((v - mean) ** 2 for v in vals) / len(vals)) ** 0.5)
+        return sum(stds) / len(stds) if stds else None
+
+
+class MicroexpressionBurst(_BlendshapeWindowCue):
+    """Fast-onset proxy: peak frame-to-frame blendshape delta in ~1 s.
+
+    HONEST caveat (governance): micro-expressions have low base rates and modest
+    real-world effect sizes — weighted low (tier 4) by design.
+    """
+
+    cue_id = "visual.microexpression_burst"
+    direction = 1
+    window_ms = MICRO_WINDOW_MS
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        hist = self._push(frame)
+        if hist is None:
+            return None
+        if len(hist) < 2:
+            return 0.0
+        peak = 0.0
+        for (_, a), (_, b) in zip(hist, hist[1:], strict=False):
+            keys = set(a) | set(b)
+            delta = sum(abs(b.get(k, 0.0) - a.get(k, 0.0)) for k in keys) / max(1, len(keys))
+            peak = max(peak, delta)
+        return peak
+
+
 VISUAL_DETECTORS = [
     BlinkRate, GazeAversion, BrowFlash, LipPress, JawTension,
     GazeFixation, PupilDilation, EyeBlocking, EyeWiden, NoseWrinkle, AsymmetricSmile,
@@ -488,4 +565,5 @@ VISUAL_DETECTORS = [
     JawShift, JawDrop, LipRoll, BrowOuterRaise, ContemptAsymmetry,
     DuchenneAbsence, StressBrow, FaceAsymmetry,
     HeadVelocity, HeadAcceleration, BlinkDuration,
+    FacialRigidity, MicroexpressionBurst,
 ]

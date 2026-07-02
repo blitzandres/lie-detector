@@ -96,9 +96,10 @@ def _geo_frame(ts, **geo):
                                    "blendshapes": {}, "geometry": geo})
 
 
-def test_visual_registry_has_twentyseven_detectors():
+def test_visual_registry_has_twentynine_detectors():
     from blitz_overlay.cues.visual import VISUAL_DETECTORS
-    assert len(VISUAL_DETECTORS) == 27
+    assert len(VISUAL_DETECTORS) == 29
+    assert len({d().cue_id for d in VISUAL_DETECTORS}) == 29
     ids = {d().cue_id for d in VISUAL_DETECTORS}
     assert {"visual.head_movement", "visual.eye_squint", "visual.mouth_stretch",
             "visual.mouth_frown", "visual.mouth_shrug", "visual.jaw_shift", "visual.jaw_drop",
@@ -289,3 +290,33 @@ def test_blink_duration_reports_last_completed_blink():
     assert abs(val - 0.5) < 0.05
     assert d.measure(_frame(700, eyeBlinkLeft=0.1)) > 0.0      # remembered within window
     assert d.measure(_frame(20_000, eyeBlinkLeft=0.1)) == 0.0  # decayed after window
+
+
+def test_facial_rigidity_low_variance_scores_high():
+    from blitz_overlay.cues.visual import FacialRigidity
+    frozen = FacialRigidity()
+    lively = FacialRigidity()
+    for i in range(30):
+        frozen.measure(_frame(i * 100, browInnerUp=0.30, mouthSmileLeft=0.20))
+        wob = 0.3 * (i % 2)
+        lively.measure(_frame(i * 100, browInnerUp=0.30 + wob, mouthSmileLeft=0.20 + wob))
+    v_frozen = frozen.measure(_frame(3000, browInnerUp=0.30, mouthSmileLeft=0.20))
+    v_lively = lively.measure(_frame(3000, browInnerUp=0.30, mouthSmileLeft=0.20))
+    # direction = -1: LOW expressivity variance is the suspicious pole, so the raw
+    # measure (variance) must be LOWER for the frozen face.
+    assert v_frozen < v_lively
+    assert frozen.direction == -1
+
+
+def test_microexpression_burst_spikes_on_fast_onset():
+    from blitz_overlay.cues.visual import MicroexpressionBurst
+    slow = MicroexpressionBurst()
+    fast = MicroexpressionBurst()
+    for i in range(10):
+        slow.measure(_frame(i * 100, mouthFrownLeft=i * 0.01))       # creeping change
+        fast.measure(_frame(i * 100, mouthFrownLeft=0.6 if i == 5 else 0.0))  # 1-frame flash
+    v_slow = slow.measure(_frame(1000, mouthFrownLeft=0.1))
+    v_fast = fast.measure(_frame(1000, mouthFrownLeft=0.0))
+    assert v_fast > v_slow
+    assert MicroexpressionBurst().measure(
+        FeatureFrame.from_dict({"ts": 0, "face_present": True})) is None
