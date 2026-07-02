@@ -391,10 +391,101 @@ class FaceAsymmetry(CueDetector):
         return sum(deltas) / len(deltas)
 
 
+HEAD_KIN_WINDOW_MS = 800         # smoothing window for velocity/acceleration
+BLINK_MEMORY_MS = 5_000          # a completed blink stays reportable this long
+
+
+class _HeadKinematics(CueDetector):
+    """Shared pose-history buffer for velocity/acceleration cues."""
+
+    direction = 1
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._hist: deque[tuple[int, float, float, float]] = deque()
+
+    def _push(self, frame: FeatureFrame) -> list[tuple[int, float, float, float]] | None:
+        hp = frame.head_pose
+        if not hp or not any(k in hp for k in ("yaw", "pitch", "roll")):
+            return None
+        now = frame.ts
+        self._hist.append((now, float(hp.get("yaw", 0.0)),
+                           float(hp.get("pitch", 0.0)), float(hp.get("roll", 0.0))))
+        while self._hist and self._hist[0][0] < now - HEAD_KIN_WINDOW_MS:
+            self._hist.popleft()
+        return list(self._hist)
+
+    @staticmethod
+    def _velocities(hist: list[tuple[int, float, float, float]]) -> list[float]:
+        out = []
+        for (t0, y0, p0, r0), (t1, y1, p1, r1) in zip(hist, hist[1:], strict=False):
+            dt = max(1, t1 - t0) / 1000.0
+            dist = ((y1 - y0) ** 2 + (p1 - p0) ** 2 + (r1 - r0) ** 2) ** 0.5
+            out.append(dist / dt)
+        return out
+
+
+class HeadVelocity(_HeadKinematics):
+    """Head rotation speed (°/s) — nods/shakes/tilts as tension or emphasis."""
+
+    cue_id = "visual.head_velocity"
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        hist = self._push(frame)
+        if hist is None:
+            return None
+        v = self._velocities(hist)
+        return sum(v) / len(v) if v else 0.0
+
+
+class HeadAcceleration(_HeadKinematics):
+    """Sudden head-movement onsets (°/s per step) — jerky motion vs steady rotation."""
+
+    cue_id = "visual.head_acceleration"
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        hist = self._push(frame)
+        if hist is None:
+            return None
+        v = self._velocities(hist)
+        if len(v) < 2:
+            return 0.0
+        return max(abs(v1 - v0) for v0, v1 in zip(v, v[1:], strict=False))
+
+
+class BlinkDuration(CueDetector):
+    """Duration of the most recent completed blink (s) — long blinks and slow rebound."""
+
+    cue_id = "visual.blink_duration"
+    direction = 1
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._closed_since: int | None = None
+        self._last_blink: tuple[int, float] | None = None   # (ended_ts, duration_s)
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        if "eyeBlinkLeft" not in bs and "eyeBlinkRight" not in bs:
+            return None
+        closed = max(bs.get("eyeBlinkLeft", 0.0),
+                     bs.get("eyeBlinkRight", 0.0)) >= BLINK_CLOSED_THRESHOLD
+        now = frame.ts
+        if closed and self._closed_since is None:
+            self._closed_since = now
+        elif not closed and self._closed_since is not None:
+            self._last_blink = (now, (now - self._closed_since) / 1000.0)
+            self._closed_since = None
+        if self._last_blink and now - self._last_blink[0] <= BLINK_MEMORY_MS:
+            return self._last_blink[1]
+        return 0.0
+
+
 VISUAL_DETECTORS = [
     BlinkRate, GazeAversion, BrowFlash, LipPress, JawTension,
     GazeFixation, PupilDilation, EyeBlocking, EyeWiden, NoseWrinkle, AsymmetricSmile,
     HeadMovement, EyeSquint, MouthStretch, MouthFrown, MouthShrug,
     JawShift, JawDrop, LipRoll, BrowOuterRaise, ContemptAsymmetry,
     DuchenneAbsence, StressBrow, FaceAsymmetry,
+    HeadVelocity, HeadAcceleration, BlinkDuration,
 ]

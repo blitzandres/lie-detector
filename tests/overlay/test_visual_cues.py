@@ -96,9 +96,9 @@ def _geo_frame(ts, **geo):
                                    "blendshapes": {}, "geometry": geo})
 
 
-def test_visual_registry_has_twentyfour_detectors():
+def test_visual_registry_has_twentyseven_detectors():
     from blitz_overlay.cues.visual import VISUAL_DETECTORS
-    assert len(VISUAL_DETECTORS) == 24
+    assert len(VISUAL_DETECTORS) == 27
     ids = {d().cue_id for d in VISUAL_DETECTORS}
     assert {"visual.head_movement", "visual.eye_squint", "visual.mouth_stretch",
             "visual.mouth_frown", "visual.mouth_shrug", "visual.jaw_shift", "visual.jaw_drop",
@@ -254,3 +254,38 @@ def test_face_asymmetry_averages_lr_pairs():
     assert asym > sym
     assert sym == 0.0
     assert d.measure(_frame(0, browInnerUp=0.5)) is None  # no paired keys -> abstain
+
+
+def test_head_velocity_measures_rotation_speed():
+    from blitz_overlay.cues.visual import HeadVelocity
+    d = HeadVelocity()
+    d.measure(_frame(0, g_yaw=0.0))
+    still = d.measure(_frame(100, g_yaw=0.0))
+    d2 = HeadVelocity()
+    d2.measure(_frame(0, g_yaw=0.0))
+    moving = d2.measure(_frame(100, g_yaw=8.0))   # 8 deg in 100 ms = 80 deg/s
+    assert moving > still
+    assert d.measure(FeatureFrame.from_dict({"ts": 200, "face_present": True})) is None
+
+
+def test_head_acceleration_spikes_on_sudden_onset():
+    from blitz_overlay.cues.visual import HeadAcceleration
+    d = HeadAcceleration()
+    for i, yaw in enumerate([0.0, 2.0, 4.0, 6.0]):     # steady rotation
+        steady = d.measure(_frame(i * 100, g_yaw=yaw))
+    d2 = HeadAcceleration()
+    for i, yaw in enumerate([0.0, 0.0, 0.0, 9.0]):     # sudden jerk
+        sudden = d2.measure(_frame(i * 100, g_yaw=yaw))
+    assert sudden > steady
+
+
+def test_blink_duration_reports_last_completed_blink():
+    from blitz_overlay.cues.visual import BlinkDuration
+    d = BlinkDuration()
+    d.measure(_frame(0, eyeBlinkLeft=0.1))          # open
+    d.measure(_frame(100, eyeBlinkLeft=0.9))        # closes
+    d.measure(_frame(500, eyeBlinkLeft=0.9))        # held closed
+    val = d.measure(_frame(600, eyeBlinkLeft=0.1))  # reopens -> blink took ~500 ms
+    assert abs(val - 0.5) < 0.05
+    assert d.measure(_frame(700, eyeBlinkLeft=0.1)) > 0.0      # remembered within window
+    assert d.measure(_frame(20_000, eyeBlinkLeft=0.1)) == 0.0  # decayed after window

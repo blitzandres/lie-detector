@@ -252,6 +252,18 @@ CUE_WEIGHTS: dict[str, dict] = {
         "effect_size_d": 0.30, "reliability_tier": 3, "family": "visual", "region": "mouth",
         "citation": "Facial asymmetry under load — unilateral action-intensity differences; weak-moderate, person-relative baseline required (catalog cue 5/12 family).",
     },
+    "visual.head_velocity": {
+        "effect_size_d": 0.25, "reliability_tier": 3, "family": "visual", "region": "head",
+        "citation": "Catalog cue 14 family — head-movement dynamics; velocity component, weak single-cue diagnosticity, person-relative.",
+    },
+    "visual.head_acceleration": {
+        "effect_size_d": 0.25, "reliability_tier": 3, "family": "visual", "region": "head",
+        "citation": "Catalog cue 14 family — sudden movement onsets (jerk) distinct from sustained restlessness; weak, person-relative.",
+    },
+    "visual.blink_duration": {
+        "effect_size_d": 0.30, "reliability_tier": 3, "family": "visual", "region": "eyes",
+        "citation": "Catalog cue 60 family — blink duration/rebound timing complements rate; long closures under load.",
+    },
 }
 
 
