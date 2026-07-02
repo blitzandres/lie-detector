@@ -35,3 +35,30 @@ def test_low_content_low_cue_is_clear():
     res = fuse_turn(v, _cue_window([], sync=0))
     assert res["combined"] < 0.45
     assert res["label"].lower().startswith("clear")
+
+
+def test_gaze_aligned_answer_window_adds_confidence():
+    from blitz_overlay.content.fusion import fuse_turn
+
+    class V:
+        available = True
+        risk = 0.5
+
+        def to_dict(self):
+            return {"risk": self.risk}
+
+    base_window = {"n_frames": 10, "cue_ids": [], "families": [],
+                   "peak_z": 0.0, "max_families_synchronous": 0}
+    gaze_window = dict(base_window, cue_ids=["visual.gaze_aversion"])
+
+    plain = fuse_turn(V(), base_window)
+    gazey = fuse_turn(V(), gaze_window)
+    assert gazey["combined"] > plain["combined"]
+    assert gazey["gaze_aligned"] is True
+    assert plain["gaze_aligned"] is False
+
+    # Below the WATCH floor, gaze alone must NOT move the verdict
+    class Low(V):
+        risk = 0.1
+
+    assert fuse_turn(Low(), gaze_window)["combined"] == fuse_turn(Low(), base_window)["combined"]
