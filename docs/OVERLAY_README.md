@@ -2,8 +2,8 @@
 
 Real-time "AI-vision" deception **overlay** that runs entirely on your machine. The browser
 captures your webcam + mic and runs MediaPipe, rPPG sampling, audio feature extraction, and
-(optionally) live transcription; a local Python engine detects **32 cues across 4 voting
-families** (21 visual · 3 audio · 7 linguistic · 1 physio), fuses them by family with a
+(optionally) live transcription; a local Python engine detects **40 cues across 4 voting
+families** (29 visual · 3 audio · 7 linguistic · 1 physio), fuses them by family with a
 two-gate consensus, and draws a telestrator, consensus panel, deforming **enneagram** (family
 view), and radial **Cue Polygon** (per-cue synchrony view). **Raw video never leaves your
 device** — only tiny feature vectors reach the engine over a localhost WebSocket. GitHub
@@ -20,6 +20,11 @@ Enable with `BLITZ_OVERLAY_CONTENT=ollama` (requires `ollama` + a small model li
 > mic audio to Google for transcription (no install/login). Video still never leaves the browser,
 > and a fully-local Whisper adapter (no external call) is the documented upgrade behind the same
 > `Transcriber` seam. A clear in-page notice + disable toggle appear while it is active.
+
+> **Micro-expression caveat:** the `microexpression_burst` cue is an onset-velocity *proxy*,
+> not true micro-expression recognition. Micro-expressions have low base rates and modest
+> real-world effect sizes in the literature — the cue is deliberately weighted low (tier 4)
+> and can never drive a FLAG on its own (the two-gate still requires a second family).
 
 Honest framing: statuses are **CALIBRATING → CLEAR → WATCH → FLAG**, never a binary "LIE".
 A red pulse fires *only* on a two-gate FLAG (≥2 independent families agree AND combined risk ≥ 0.65).

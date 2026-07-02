@@ -2,7 +2,7 @@
 
 > The open-source behavioral deception detection core.
 
-Blitz Engine is a modular, research-driven engine that analyzes live webcam + mic input (plus text and WAV audio) to detect behavioral deception signals. The flagship app is the **Live Consensus Overlay**: 32 real-time cues across 4 voting families (visual · audio · linguistic · physio), fused with a Bayesian log-odds architecture, personal baseline calibration, and a two-gate consensus — plus an optional local-LLM **content engine** that judges the meaning of each Q&A answer and confirms it against the time-aligned cue activity.
+Blitz Engine is a modular, research-driven engine that analyzes live webcam + mic input (plus text and WAV audio) to detect behavioral deception signals. The flagship app is the **Live Consensus Overlay**: 40 real-time cues across 4 voting families (visual · audio · linguistic · physio), fused with a Bayesian log-odds architecture, personal baseline calibration, and a two-gate consensus — plus an optional local-LLM **content engine** that judges the meaning of each Q&A answer and confirms it against the time-aligned cue activity.
 
 **Not a lie detector. A behavioral signal analyzer.**
 
@@ -47,7 +47,7 @@ All planning artifacts consolidated in [`planning/`](planning/) folder:
 
 The flagship build is the **Live Consensus Overlay** (`blitz_overlay/` + `apps/overlay-web/`):
 
-- **32 live cues · 4 voting families** — 21 visual (MediaPipe blendshapes, iris, landmark geometry), 3 audio (browser Web Audio scalars), 7 linguistic (live transcript lexicons), 1 physio (skin-aware webcam rPPG with an honest abstain gate)
+- **40 live cues · 4 voting families** — 29 visual (MediaPipe blendshapes, iris, landmark geometry), 3 audio (browser Web Audio scalars), 7 linguistic (live transcript lexicons), 1 physio (skin-aware webcam rPPG with an honest abstain gate)
 - **Two-gate consensus** — a FLAG requires ≥2 independent families AND posterior ≥ 0.65; statuses are CALIBRATING → CLEAR → WATCH → FLAG, never a binary "LIE"
 - **Content engine (optional)** — a local Ollama LLM judges each Q&A answer for content-pattern markers and fuses content-first with the cue timeline for that answer's window; degrades gracefully when Ollama is absent
 - **Live visualizations** — deforming enneagram (family view), radial Cue Polygon (per-cue synchrony view), synchrony bell + trust meter, hard-gated calibration card
@@ -146,7 +146,7 @@ flowchart LR
 
     subgraph ENGINE ["PYTHON ENGINE — localhost, local math only"]
         direction TB
-        CUES["32 cue detectors\n21 visual · 3 audio · 7 linguistic · 1 physio"]
+        CUES["40 cue detectors\n29 visual · 3 audio · 7 linguistic · 1 physio"]
         CUES --> CAL["Rolling personal baseline\nz = (x − median) / (1.4826 × MAD)\nhard-gated calibration\n(every producing cue needs ≥8 samples)"]
         CAL --> FUSE["Science-weighted family fusion\nlogit(P) = logit(0.30) + Σ w·(d·z − d²/2)\nweights fixed from published effect sizes"]
         FUSE --> GATE{"Two-gate consensus\nposterior ≥ 0.65\nAND ≥ 2 independent families"}
@@ -249,7 +249,7 @@ Full specification: [planning/BLITZ_ENGINE_SPEC.md](planning/BLITZ_ENGINE_SPEC.m
 
 ## The 66-Cue Catalog
 
-The research catalog spans 66 cues; **32 are live in the overlay today** (21 visual · 3 audio · 7 linguistic · 1 physio). The rest arrive via the Body family, the offline research tier, and deeper audio.
+The research catalog spans 66 cues; **40 are live in the overlay today** (29 visual · 3 audio · 7 linguistic · 1 physio). The rest arrive via the Body family, the offline research tier, and deeper audio.
 
 | Domain | Catalog count | Key signals |
 |---|---|---|
@@ -340,7 +340,7 @@ EU AI Act (Regulation 2024/1689) applies. Do not deploy for high-risk uses in EU
 ## Status
 
 - [x] Phase 0 — Research complete, planning consolidated, repo initialized
-- [x] Live Consensus Overlay — 32 cues, 4 voting families, two-gate consensus, hard-gated calibration, skin-aware rPPG, synchrony bell
+- [x] Live Consensus Overlay — 40 cues, 4 voting families, two-gate consensus, hard-gated calibration, skin-aware rPPG, synchrony bell
 - [x] Content engine — local Ollama LLM judges Q&A answers, content-primary fusion with the cue timeline
 - [x] Text + WAV engine — CLI `blitz analyze-text`, linguistic + audio analyzers on the shared fusion core
 - [ ] Body family — MediaPipe Pose as the 5th voter (`planning/STAGE2_CUE_DETECTION_PLAN.md`)
