@@ -8,7 +8,7 @@ they must not move these weights.
 
 from __future__ import annotations
 
-WEIGHT_SET_VERSION = "stage1-2026-06-16"
+WEIGHT_SET_VERSION = "step2-2026-07-02"
 
 # cue_id -> {effect_size_d, reliability_tier(1 strong..4 anchor), family, region, citation}
 CUE_WEIGHTS: dict[str, dict] = {
@@ -238,6 +238,19 @@ CUE_WEIGHTS: dict[str, dict] = {
     "visual.contempt_asymmetry": {
         "effect_size_d": 0.30, "reliability_tier": 2, "family": "visual", "region": "mouth",
         "citation": "AU14 unilateral contempt — left-right mouth-dimple asymmetry; moderate micro-expression marker.",
+    },
+    # Step 2b — temporal/dynamic cue expansion (spec 2026-07-02-step2-visual-deepening)
+    "visual.duchenne_absence": {
+        "effect_size_d": 0.35, "reliability_tier": 3, "family": "visual", "region": "mouth",
+        "citation": "Ekman & Friesen — Duchenne marker: AU12 without AU6 = social/masked smile; moderate diagnosticity for masked affect (catalog cue 5 family).",
+    },
+    "visual.stress_brow": {
+        "effect_size_d": 0.30, "reliability_tier": 3, "family": "visual", "region": "brow",
+        "citation": "FACS — AU1+AU2+AU4 combination: fear/stress brow; combo more specific than single-AU brow movement (catalog cue 9 family).",
+    },
+    "visual.face_asymmetry": {
+        "effect_size_d": 0.30, "reliability_tier": 3, "family": "visual", "region": "mouth",
+        "citation": "Facial asymmetry under load — unilateral action-intensity differences; weak-moderate, person-relative baseline required (catalog cue 5/12 family).",
     },
 }
 

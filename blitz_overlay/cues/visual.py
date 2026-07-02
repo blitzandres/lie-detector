@@ -321,9 +321,80 @@ class HeadMovement(CueDetector):
         return steps / (len(hist) - 1)
 
 
+SMILE_FLOOR = 0.3   # below this there is no smile to authenticate
+
+
+class DuchenneAbsence(CueDetector):
+    """Smile without eye involvement (AU12 high, AU6 low) — social/masked smile.
+
+    Ekman's Duchenne marker: genuine enjoyment recruits orbicularis oculi (cheekSquint).
+    Signal only exists while smiling; no smile → 0 (not suspicious).
+    """
+
+    cue_id = "visual.duchenne_absence"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        keys = ("mouthSmileLeft", "mouthSmileRight", "cheekSquintLeft", "cheekSquintRight")
+        if not any(k in bs for k in keys):
+            return None
+        smile = (bs.get("mouthSmileLeft", 0.0) + bs.get("mouthSmileRight", 0.0)) / 2.0
+        if smile < SMILE_FLOOR:
+            return 0.0
+        cheek = (bs.get("cheekSquintLeft", 0.0) + bs.get("cheekSquintRight", 0.0)) / 2.0
+        return smile * max(0.0, smile - cheek)
+
+
+class StressBrow(CueDetector):
+    """AU1+AU2+AU4 co-occurrence — the fear/stress brow. All three must be present."""
+
+    cue_id = "visual.stress_brow"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        keys = ("browInnerUp", "browOuterUpLeft", "browOuterUpRight",
+                "browDownLeft", "browDownRight")
+        if not any(k in bs for k in keys):
+            return None
+        inner = bs.get("browInnerUp", 0.0)
+        outer = (bs.get("browOuterUpLeft", 0.0) + bs.get("browOuterUpRight", 0.0)) / 2.0
+        down = (bs.get("browDownLeft", 0.0) + bs.get("browDownRight", 0.0)) / 2.0
+        return min(inner, outer, down)  # co-occurrence: the weakest component gates the combo
+
+
+# L/R blendshape pairs for the multi-region asymmetry index (smile/dimple asymmetry
+# already has dedicated cues — excluded to avoid double counting).
+ASYMMETRY_PAIRS = (
+    ("eyeBlinkLeft", "eyeBlinkRight"),
+    ("eyeSquintLeft", "eyeSquintRight"),
+    ("browDownLeft", "browDownRight"),
+    ("mouthStretchLeft", "mouthStretchRight"),
+    ("mouthFrownLeft", "mouthFrownRight"),
+    ("mouthPressLeft", "mouthPressRight"),
+)
+
+
+class FaceAsymmetry(CueDetector):
+    """Multi-region left/right deviation (eye + brow + mouth) beyond the smile cues."""
+
+    cue_id = "visual.face_asymmetry"
+    direction = 1
+
+    def measure(self, frame: FeatureFrame) -> float | None:
+        bs = frame.blendshapes
+        deltas = [abs(bs[left] - bs[right])
+                  for left, right in ASYMMETRY_PAIRS if left in bs and right in bs]
+        if not deltas:
+            return None
+        return sum(deltas) / len(deltas)
+
+
 VISUAL_DETECTORS = [
     BlinkRate, GazeAversion, BrowFlash, LipPress, JawTension,
     GazeFixation, PupilDilation, EyeBlocking, EyeWiden, NoseWrinkle, AsymmetricSmile,
     HeadMovement, EyeSquint, MouthStretch, MouthFrown, MouthShrug,
     JawShift, JawDrop, LipRoll, BrowOuterRaise, ContemptAsymmetry,
+    DuchenneAbsence, StressBrow, FaceAsymmetry,
 ]

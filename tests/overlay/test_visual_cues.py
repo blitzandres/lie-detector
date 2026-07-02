@@ -96,9 +96,9 @@ def _geo_frame(ts, **geo):
                                    "blendshapes": {}, "geometry": geo})
 
 
-def test_visual_registry_has_twentyone_detectors():
+def test_visual_registry_has_twentyfour_detectors():
     from blitz_overlay.cues.visual import VISUAL_DETECTORS
-    assert len(VISUAL_DETECTORS) == 21
+    assert len(VISUAL_DETECTORS) == 24
     ids = {d().cue_id for d in VISUAL_DETECTORS}
     assert {"visual.head_movement", "visual.eye_squint", "visual.mouth_stretch",
             "visual.mouth_frown", "visual.mouth_shrug", "visual.jaw_shift", "visual.jaw_drop",
@@ -217,3 +217,40 @@ def test_head_movement_abstains_without_head_pose():
     from blitz_overlay.schemas import FeatureFrame
     f = FeatureFrame.from_dict({"ts": 0, "face_present": True, "confidence": 0.9})
     assert HeadMovement().measure(f) is None
+
+
+def test_duchenne_absence_high_when_smile_without_cheeks():
+    from blitz_overlay.cues.visual import DuchenneAbsence
+    d = DuchenneAbsence()
+    masked = d.measure(_frame(0, mouthSmileLeft=0.8, mouthSmileRight=0.8,
+                              cheekSquintLeft=0.05, cheekSquintRight=0.05))
+    genuine = d.measure(_frame(0, mouthSmileLeft=0.8, mouthSmileRight=0.8,
+                               cheekSquintLeft=0.7, cheekSquintRight=0.7))
+    assert masked > genuine
+    assert d.measure(_frame(0, mouthSmileLeft=0.1, mouthSmileRight=0.1,
+                            cheekSquintLeft=0.0, cheekSquintRight=0.0)) == 0.0  # no smile -> no signal
+    assert d.measure(_frame(0, browInnerUp=0.5)) is None  # inputs absent -> abstain
+
+
+def test_stress_brow_requires_co_occurrence():
+    from blitz_overlay.cues.visual import StressBrow
+    d = StressBrow()
+    all_up = d.measure(_frame(0, browInnerUp=0.6, browOuterUpLeft=0.5, browOuterUpRight=0.5,
+                              browDownLeft=0.4, browDownRight=0.4))
+    inner_only = d.measure(_frame(0, browInnerUp=0.6, browOuterUpLeft=0.0, browOuterUpRight=0.0,
+                                  browDownLeft=0.0, browDownRight=0.0))
+    assert all_up > inner_only
+    assert inner_only == 0.0  # AU1 alone is not the AU1+2+4 combo
+    assert d.measure(_frame(0, jawOpen=0.5)) is None
+
+
+def test_face_asymmetry_averages_lr_pairs():
+    from blitz_overlay.cues.visual import FaceAsymmetry
+    d = FaceAsymmetry()
+    sym = d.measure(_frame(0, eyeSquintLeft=0.4, eyeSquintRight=0.4,
+                           browDownLeft=0.3, browDownRight=0.3))
+    asym = d.measure(_frame(0, eyeSquintLeft=0.8, eyeSquintRight=0.1,
+                            browDownLeft=0.6, browDownRight=0.1))
+    assert asym > sym
+    assert sym == 0.0
+    assert d.measure(_frame(0, browInnerUp=0.5)) is None  # no paired keys -> abstain
