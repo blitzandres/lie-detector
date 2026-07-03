@@ -55,6 +55,8 @@ The flagship build is the **Live Consensus Overlay** (`blitz_overlay/` + `apps/o
 
 The repository also includes the earlier **text + WAV audio engine** (`blitz_engine/engine.py`, `modalities/`), which shares the same calibration and fusion core.
 
+The repository also ships the **research tier**: `blitz analyze-video` runs recorded clips through Py-Feat AUs + optional Farneback optical flow (`pip install -e ".[research]"`), emitting the same CueEvents into the shared fusion core.
+
 Not yet implemented:
 
 - Body family (MediaPipe Pose — 5th voter, planned in `planning/STAGE2_CUE_DETECTION_PLAN.md`)
@@ -205,9 +207,18 @@ The sensitivity slider in the UI moves only the bell/burst operating point (K, l
 
 ---
 
-### 4 · Research Tier — offline visual analyzer (planned next)
+### 4 · Research Tier — offline visual analyzer (built)
 
-For recorded video only — these models need raw frames and are too heavy for the live path (M1/8GB rule: one model loaded at a time, sequential).
+For recorded video only — these models need raw frames and are too heavy for the live path (M1/8GB rule: one model loaded at a time, sequential). Install the heavy backends with `pip install -e ".[research]"`, then:
+
+```bash
+blitz analyze-video \
+  --baseline-video b1.mp4 --baseline-video b2.mp4 --baseline-video b3.mp4 \
+  --response-video response.mp4 --question "Where were you Tuesday?" \
+  --optical-flow
+```
+
+At least 3 baseline clips are required (the personal baseline needs 3+ observations per cue).
 
 ```mermaid
 flowchart LR
@@ -220,7 +231,7 @@ flowchart LR
     CE --> SAME["Same fusion core\nMAD baseline → log-odds → two-gate"]
 ```
 
-LibreFace is the documented fallback AU backend. Honest caveat carried into governance docs: micro-expressions have low base rates and modest real-world effect sizes.
+Nine clip-level cues (AU combos, Duchenne deficit, emotion leakage, head dynamics, expressivity rigidity, micro-burst proxy, flow agitation) feed the same personal-baseline + log-odds fusion as text/audio. Py-Feat is the working backend; OpenGraphAU (ensemble) and LibreFace (fallback) are ready seams behind the same `AUBackend` contract. Honest caveat carried into governance docs: micro-expressions have low base rates and modest real-world effect sizes.
 
 ---
 
@@ -344,7 +355,7 @@ EU AI Act (Regulation 2024/1689) applies. Do not deploy for high-risk uses in EU
 - [x] Content engine — local Ollama LLM judges Q&A answers, content-primary fusion with the cue timeline
 - [x] Text + WAV engine — CLI `blitz analyze-text`, linguistic + audio analyzers on the shared fusion core
 - [ ] Body family — MediaPipe Pose as the 5th voter (`planning/STAGE2_CUE_DETECTION_PLAN.md`)
-- [ ] Research tier — offline visual analyzer (Py-Feat v2 + OpenGraphAU + optical flow)
+- [x] Research tier — offline visual analyzer (`blitz analyze-video`: Py-Feat v2 + Farneback optical flow via `.[research]`; OpenGraphAU/LibreFace are ready seams)
 - [ ] Validation — benchmark + fairness audit + model card
 - [ ] Hardware extension — thermal camera
 
