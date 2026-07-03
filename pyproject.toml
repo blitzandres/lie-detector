@@ -16,6 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6", "httpx>=0.27"]
+# Offline research tier (analyze-video): heavy models, never needed by the live overlay.
+research = ["py-feat>=0.6.2", "opencv-python>=4.9"]
 
 [project.scripts]
 blitz = "blitz_engine.cli:main"
@@ -25,8 +27,8 @@ blitz-overlay = "blitz_overlay.__main__:main"
 packages = [
     "blitz_engine",
     "core", "core.calibration", "core.fusion", "core.schemas",
-    "modalities", "modalities.audio", "modalities.linguistic",
-    "blitz_overlay", "blitz_overlay.cues",
+    "modalities", "modalities.audio", "modalities.linguistic", "modalities.visual",
+    "blitz_overlay", "blitz_overlay.cues", "blitz_overlay.content",
 ]
 
 [tool.ruff]

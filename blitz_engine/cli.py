@@ -30,6 +30,23 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional text file with one baseline latency per line in milliseconds.",
     )
+
+    video = subparsers.add_parser(
+        "analyze-video",
+        help="Research tier: analyze a recorded response video against baseline clips "
+             "(needs the [research] extra: pip install -e '.[research]').",
+    )
+    video.add_argument(
+        "--baseline-video", action="append", required=True, dest="baseline_videos",
+        help="Neutral baseline clip; repeat the flag — at least 3 clips required.",
+    )
+    video.add_argument("--response-video", required=True, help="The response clip to analyze.")
+    video.add_argument("--question", default="", help="Optional question prompt.")
+    video.add_argument("--optical-flow", action="store_true",
+                       help="Add the Farneback optical-flow pass (visual.flow_agitation cue).")
+    video.add_argument("--use-case", default="research", help="Declared use case.")
+    video.add_argument("--jurisdiction", default="CA-US", help="Declared jurisdiction code.")
+    video.add_argument("--output", default="", help="Optional output JSON path.")
     return parser
 
 
@@ -73,12 +90,43 @@ def run_analyze_text(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_analyze_video(args: argparse.Namespace) -> int:
+    from modalities.visual.analyzer import VisualAnalyzer
+
+    flow = None
+    if args.optical_flow:
+        from modalities.visual.flow import FarnebackFlow
+        flow = FarnebackFlow()
+
+    engine = BlitzEngine(modalities=["visual"], visual_analyzer=VisualAnalyzer(flow=flow))
+    session = engine.new_session(
+        baseline_video_files=args.baseline_videos,
+        consent=True,
+        use_case=args.use_case,
+        jurisdiction=args.jurisdiction,
+    )
+    result = session.analyze(
+        video_path=args.response_video,
+        question=args.question or None,
+    )
+
+    payload = dumps_report(result)
+    if args.output:
+        Path(args.output).write_text(payload + "\n")
+    else:
+        print(payload)
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
     if args.command == "analyze-text":
         return run_analyze_text(args)
+    if args.command == "analyze-video":
+        return run_analyze_video(args)
 
     parser.error(f"Unknown command: {args.command}")
     return 2

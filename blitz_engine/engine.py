@@ -11,7 +11,7 @@ from core.schemas.cue_event import BlitzOutput
 from modalities.audio import AudioAnalyzer
 from modalities.linguistic import LinguisticAnalyzer
 
-ALLOWED_MODALITIES = {"linguistic", "audio"}
+ALLOWED_MODALITIES = {"linguistic", "audio", "visual"}
 
 
 class BlitzEngine:
@@ -22,25 +22,33 @@ class BlitzEngine:
         modalities: list[str] | None = None,
         prior: float = DEFAULT_PRIOR,
         convergence_threshold: float = 0.65,
+        visual_analyzer=None,
     ):
         self.modalities = modalities or ["linguistic"]
         unsupported = [modality for modality in self.modalities if modality not in ALLOWED_MODALITIES]
         if unsupported:
             raise ValueError(
                 f"Unsupported modalities for current MVP: {', '.join(unsupported)}. "
-                "Only 'linguistic' is implemented."
+                "Implemented: linguistic, audio, visual (research tier)."
             )
 
         self.prior = prior
         self.convergence_threshold = convergence_threshold
         self.linguistic = LinguisticAnalyzer() if "linguistic" in self.modalities else None
         self.audio = AudioAnalyzer() if "audio" in self.modalities else None
+        if "visual" in self.modalities:
+            # Import here so the base engine never pulls the research-tier module chain.
+            from modalities.visual.analyzer import VisualAnalyzer
+            self.visual = visual_analyzer or VisualAnalyzer()
+        else:
+            self.visual = None
 
     def new_session(
         self,
         *,
         baseline_texts: list[str] | None = None,
         baseline_audio_files: list[str] | None = None,
+        baseline_video_files: list[str] | None = None,
         consent: bool,
         use_case: str,
         jurisdiction: str,
@@ -50,8 +58,8 @@ class BlitzEngine:
         if not consent:
             raise ValueError("Consent must be declared to create a session.")
 
-        if not baseline_texts and not baseline_audio_files:
-            raise ValueError("Provide baseline_texts or baseline_audio_files")
+        if not baseline_texts and not baseline_audio_files and not baseline_video_files:
+            raise ValueError("Provide baseline_texts, baseline_audio_files or baseline_video_files")
 
         baseline = PersonalBaseline()
         observations: dict[str, list[float]] = {}
@@ -68,11 +76,18 @@ class BlitzEngine:
             if not baseline_audio_files:
                 raise ValueError("baseline_audio_files is required when audio modality is enabled")
             observations.update(self.audio.build_baseline_observations(baseline_audio_files))
+        if self.visual:
+            if not baseline_video_files:
+                raise ValueError("baseline_video_files is required when visual modality is enabled")
+            if len(baseline_video_files) < 3:
+                raise ValueError("visual baseline needs at least 3 clips (3+ observations per cue)")
+            observations.update(self.visual.build_baseline_observations(baseline_video_files))
 
         if baseline_duration_s is None:
             text_duration = float(len(baseline_texts) * 30) if baseline_texts else 0.0
             audio_duration = float(len(baseline_audio_files) * 20) if baseline_audio_files else 0.0
-            baseline_duration_s = max(90.0, text_duration + audio_duration)
+            video_duration = float(len(baseline_video_files) * 30) if baseline_video_files else 0.0
+            baseline_duration_s = max(90.0, text_duration + audio_duration + video_duration)
 
         baseline.record_baseline(observations, duration_s=baseline_duration_s)
         return BlitzSession(
@@ -133,12 +148,13 @@ class BlitzSession:
         self,
         response_text: str | None = None,
         audio_path: str | None = None,
+        video_path: str | None = None,
         question: str | None = None,
         question_id: str | None = None,
         response_latency_ms: int | None = None,
     ) -> BlitzOutput:
-        if not response_text and not audio_path:
-            raise ValueError("Provide response_text or audio_path")
+        if not response_text and not audio_path and not video_path:
+            raise ValueError("Provide response_text, audio_path or video_path")
 
         self.question_counter += 1
         resolved_question_id = question_id or f"q{self.question_counter}"
@@ -171,6 +187,18 @@ class BlitzSession:
                 )
             )
 
+        if video_path is not None:
+            if self.engine.visual is None:
+                raise ValueError("Visual modality is not enabled for this session")
+            cues.extend(
+                self.engine.visual.analyze(
+                    video_path,
+                    question_id=resolved_question_id,
+                    baseline=self.baseline,
+                    timestamp_ms=timestamp_ms,
+                )
+            )
+
         fused = fuse(cues, prior=self.engine.prior)
         posterior = fused["posterior"]
         gate_passed = convergence_gate_passed(cues, threshold=self.engine.convergence_threshold, posterior=posterior)
@@ -185,7 +213,10 @@ class BlitzSession:
         quality_flags = {
             "baseline": self.baseline.quality_report(),
             "implemented_modalities": self.engine.modalities,
-            "input_mode": "multimodal" if response_text and audio_path else "text" if response_text else "audio",
+            "input_mode": (
+                "multimodal" if sum(x is not None for x in (response_text, audio_path, video_path)) > 1
+                else "text" if response_text else "audio" if audio_path else "video"
+            ),
             "convergence_gate_passed": gate_passed,
         }
 
