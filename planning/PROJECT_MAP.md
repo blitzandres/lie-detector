@@ -20,7 +20,7 @@ Use this before adding code or making architecture decisions.
 
 - **Canonical tracked planning copy:** `blitz-engine/planning/`
 - **Repository root:** `blitz-engine/` is the GitHub-backed project
-- **Standalone mirror:** `/Users/andresblitz/lie-detector-consolidated/` is a synced export of the planning set
+- **Standalone mirror:** `~/lie-detector-consolidated/` (a local folder outside this repo) is a synced export of the planning set
 
 If the standalone mirror and the repo ever diverge, treat the copy inside `blitz-engine/planning/` as the authoritative version.
 
