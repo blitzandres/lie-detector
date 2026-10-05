@@ -6,6 +6,10 @@ Blitz Engine is a modular, research-driven engine that analyzes live webcam + mi
 
 **Not a lie detector. A behavioral signal analyzer.**
 
+**Project page:** https://andresblitz.com/projects/lie-detector/
+
+**Author:** [Andrés Blitz](https://andresblitz.com/) · [@andresblitz](https://x.com/andresblitz)
+
 **▶ Run the Live Consensus Overlay:** see [docs/OVERLAY_README.md](docs/OVERLAY_README.md) — one command: `blitz-overlay`.
 
 **Project page:** https://andresblitz.com/projects/lie-detector/
