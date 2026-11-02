@@ -6,3 +6,6 @@ numpy>=1.26
 # Dev
 pytest>=8
 ruff>=0.6
+# Security floors (transitive via fastapi/uvicorn/httpx)
+anyio>=4.14.2
+h11>=0.16.0

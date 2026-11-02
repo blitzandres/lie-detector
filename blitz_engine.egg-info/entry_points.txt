@@ -1,0 +1,3 @@
+[console_scripts]
+blitz = blitz_engine.cli:main
+blitz-overlay = blitz_overlay.__main__:main
