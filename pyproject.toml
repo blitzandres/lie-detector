@@ -12,6 +12,8 @@ dependencies = [
     "uvicorn>=0.30",
     "websockets>=12",
     "numpy>=1.26",
+    "anyio>=4.14.2",
+    "h11>=0.16.0",
 ]
 
 [project.optional-dependencies]
